@@ -36,7 +36,7 @@ func testDB(t *testing.T) *pgxpool.Pool {
 	}
 	t.Cleanup(db.Close)
 	// Guard above is required before applying even a migration, let alone cleanup.
-	for _, file := range []string{"001_memory.sql", "004_pluggy.sql"} {
+	for _, file := range []string{"001_memory.sql", "004_pluggy.sql", "010_pluggy_wealth.sql"} {
 		sql, e := migrations.Files.ReadFile(file)
 		if e != nil {
 			t.Fatal(e)

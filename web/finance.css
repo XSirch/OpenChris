@@ -47,3 +47,12 @@
 .investment-source-link { min-height: 44px; margin-top: 6px; padding: 8px 0; border: 0; background: transparent; color: var(--amber-light); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .investment-source-link:hover { color: var(--paper); text-decoration: underline; text-underline-offset: 4px; }
 @media (max-width: 640px) { .investment-panel h2 { font-size: 15px; } .investment-note, .investment-totals dt, .investment-state { font-size: 12px; } }
+.wealth-parts{margin:12px 0;color:var(--muted);font-size:.8125rem}
+.wealth-parts>div{display:flex;justify-content:space-between;gap:12px;padding:4px 0}
+.wealth-parts dd{margin:0;color:var(--paper);text-align:right;font-variant-numeric:tabular-nums}
+.wealth-issues{margin:8px 0 12px;color:var(--muted);font-size:.8125rem;line-height:1.6}
+.wealth-issues summary{min-height:40px;align-content:center;cursor:pointer;color:var(--amber-light)}
+.wealth-issues ul{padding-inline-start:20px;margin:0}
+.wealth-issues li+li{margin-top:5px}
+#live-wealth-source{font-size:.8125rem}
+#live-net-worth{overflow-wrap:anywhere}

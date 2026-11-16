@@ -172,7 +172,7 @@ func allowedRequest(method, path string) bool {
 	if strings.HasPrefix(path, "/items/") {
 		return uuidPattern.MatchString(strings.TrimPrefix(path, "/items/"))
 	}
-	return path == "/accounts" || path == "/v2/transactions" || path == "/investments" || path == "/connectors" || path == "/webhooks"
+	return path == "/accounts" || path == "/v2/transactions" || path == "/investments" || path == "/loans" || path == "/connectors" || path == "/webhooks"
 }
 func (c *Client) key(ctx context.Context) (string, error) {
 	c.mu.Lock()
@@ -307,6 +307,12 @@ func (c *Client) Investments(ctx context.Context, itemID string) ([]Object, erro
 	}
 	return c.pages(ctx, "/investments", url.Values{"itemId": {itemID}})
 }
+func (c *Client) Loans(ctx context.Context, itemID string) ([]Object, error) {
+	if !uuidPattern.MatchString(itemID) {
+		return nil, ErrInvalid
+	}
+	return c.pages(ctx, "/loans", url.Values{"itemId": {itemID}})
+}
 func (c *Client) Connectors(ctx context.Context) ([]Object, error) {
 	return c.pages(ctx, "/connectors", url.Values{"search": {"MeuPluggy"}})
 }
@@ -361,7 +367,8 @@ func (c *Client) pages(ctx context.Context, path string, query url.Values) ([]Ob
 			return nil, errors.New("Pluggy page count changed during traversal")
 		}
 		expectedPages = last
-		if supplied, ok := out["page"].(json.Number); ok && supplied.String() != strconv.Itoa(page) {
+		if supplied, ok := out["page"].(json.Number); ok && supplied.String() != strconv.Itoa(page) &&
+			!(path == "/loans" && page == 1 && last == 0 && len(rows) == 0 && supplied.String() == "0") {
 			return nil, errors.New("Pluggy returned a different page")
 		}
 		if page >= last {

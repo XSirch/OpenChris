@@ -20,7 +20,7 @@ A instalação é individual. A integração bancária consulta os dados autoriz
 | Área | Recursos |
 | --- | --- |
 | Gastos | Registrar despesas e categorias, filtrar lançamentos por mês, categoria ou situação e exportar CSV. Com o Pluggy, acompanhar gastos importados, revisar classificações ambíguas e reaplicar uma correção a descrições iguais. |
-| Patrimônio e investimentos | Informar ativos e dívidas manualmente e consultar investimentos bancários por instituição e moeda. Cada fonte tem cobertura e data próprias. |
+| Patrimônio e investimentos | Acompanhar o patrimônio em reais pelas contas conectadas, com saldos, investimentos e dívidas da Pluggy. O painel mostra as datas dos dados e o que ficou de fora. O cadastro manual guarda bens e dívidas fora da integração. |
 | Perfil e objetivos | Registrar metas, reserva, compromissos para os próximos 30 dias, mínimo em conta, valores protegidos, tolerância a risco, experiência e necessidade de liquidez. O painel indica o que falta preencher ou revisar. |
 | Saldo e sugestões | Estimar o que sobra em contas correntes em reais após os compromissos e valores protegidos. Uma análise pessoal pode citar produtos e valores de aporte quando houver perfil confirmado, dados bancários recentes e fontes suficientes. |
 | Relatórios e conversa | Enviar perguntas a um especialista com o Codex ativo. Consultar respostas, fontes, hipóteses, riscos, limitações e o histórico de rodadas. No celular, o resumo aparece antes do arquivo de pareceres. |
@@ -29,6 +29,8 @@ A instalação é individual. A integração bancária consulta os dados autoriz
 | Escritório | Explorar a cena em pixel art, consultar perfis e acompanhar o trabalho dos personagens a partir das tarefas registradas. |
 
 Os lançamentos manuais ficam separados dos importados. A classificação aproveita categorias do banco e regras do aplicativo. Transferências próprias, pagamentos de fatura, aplicações e resgates ficam fora do total de gastos quando identificados. O painel sinaliza totais parciais e valores desconhecidos para evitar comparações enganosas.
+
+O patrimônio via Pluggy inclui os saldos bancários e as posições ativas em reais. Desconta saldos devedores, cartões e o saldo devedor de empréstimos e financiamentos quando a conexão compartilha esses contratos. O total sinaliza dados antigos, produtos que a instituição não forneceu e posições com sobreposição incerta. O valor manual aparece separado e pode ser editado em **Editar patrimônio manual**.
 
 ## Experimentar no computador
 

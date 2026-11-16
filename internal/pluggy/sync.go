@@ -154,7 +154,8 @@ func (s *Service) SyncItem(ctx context.Context, itemID string) error {
 			}
 		}
 	}
-	if err = s.persist(ctx, conn, itemID, item, accounts, transactions, investments); err != nil {
+	loans := s.readWealthLoans(ctx, itemID, item)
+	if err = s.persist(ctx, conn, itemID, item, accounts, transactions, investments, loans); err != nil {
 		return s.fail(ctx, conn, itemID, item, "partial", err)
 	}
 	return nil
@@ -258,7 +259,7 @@ func (s *Service) recordState(ctx context.Context, conn *pgxpool.Conn, itemID st
 	return tx.Commit(ctx)
 }
 
-func (s *Service) persist(ctx context.Context, conn *pgxpool.Conn, itemID string, item Object, accounts, transactions, investments []Object) error {
+func (s *Service) persist(ctx context.Context, conn *pgxpool.Conn, itemID string, item Object, accounts, transactions, investments []Object, loans []wealthLoan) error {
 	tx, err := conn.Begin(ctx)
 	if err != nil {
 		return err
@@ -328,6 +329,9 @@ func (s *Service) persist(ctx context.Context, conn *pgxpool.Conn, itemID string
 	var version int
 	err = tx.QueryRow(ctx, `UPDATE pluggy_items SET status='connected',provider_status=$3,consent_expires_at=$4,last_source_sync=$5,last_synced_at=$6::timestamptz,last_attempt_at=$6::timestamptz,next_sync_at=$6::timestamptz+$7::bigint*interval '1 millisecond',last_error_code=NULL,coverage=$8,version=CASE WHEN metadata<>$9::jsonb THEN version+1 ELSE version END,metadata=$9,observed_at=$6::timestamptz WHERE user_id=$1 AND item_id=$2 RETURNING version`, memory.UserID, itemID, nullText(item, "status"), timestamp(item, "consentExpiresAt"), timestamp(item, "lastUpdatedAt"), now, s.cfg.SyncInterval.Milliseconds(), coverage, b).Scan(&version)
 	if err != nil {
+		return err
+	}
+	if _, err = tx.Exec(ctx, `UPDATE pluggy_items SET wealth_loans=$3 WHERE user_id=$1 AND item_id=$2`, memory.UserID, itemID, loans); err != nil {
 		return err
 	}
 	if err = saveSnapshot(ctx, tx, itemID, "item", itemID, version, hash, b, nullText(item, "lastUpdatedAt"), now); err != nil {

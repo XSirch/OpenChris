@@ -14,15 +14,31 @@
   function update(data) {
     if (!data || !['manual','bank'].includes(data.mode) || typeof data.expense_text !== 'string' || typeof data.net_worth_text !== 'string') return;
     if (document.body?.dataset.production === 'true' && document.body?.dataset.codexEnabled !== 'true') data = {...data,activity_text:'IA não configurada'};
-    const text = {'live-net-worth':data.net_worth_text,'live-expenses':data.expense_text,'live-pending':data.pending_text,'live-top-category':data.top_category,'live-top-amount':data.top_category_text,'live-activity':data.activity_text,
-      'office-finance-wealth':data.net_worth_text,'office-finance-expenses':data.expense_text,'office-finance-pending':data.pending_text,
+    const wealth = data.pluggy_wealth;
+    const manualDetail = data.net_worth_date ? 'Referência manual: ' + data.net_worth_date.split('-').reverse().join('/') + '.' : 'Informe ativos e dívidas para calcular.';
+    const text = {'live-net-worth':wealth?.net ?? data.net_worth_text,'live-expenses':data.expense_text,'live-pending':data.pending_text,'live-top-category':data.top_category,'live-top-amount':data.top_category_text,'live-activity':data.activity_text,
+      'live-wealth-status':wealth?.status || 'Manual','live-wealth-source':wealth ? wealth.detail : manualDetail,
+      'live-wealth-cash':wealth?.cash || 'Não informado','live-wealth-investments':wealth?.investments || 'Não informado','live-wealth-debt':wealth?.debt || 'Não informado',
+      'live-manual-wealth':data.net_worth_text,'live-manual-wealth-date':manualDetail,
+      'office-finance-wealth-title':wealth ? 'Patrimônio via Pluggy' + (wealth.status === 'Atualizado' ? '' : ' · ' + wealth.status) : 'Patrimônio líquido manual',
+      'office-finance-wealth':wealth?.net ?? data.net_worth_text,'office-finance-expenses':data.expense_text,'office-finance-pending':data.pending_text,
       'office-finance-category':data.top_category,'office-finance-category-amount':data.top_category_text,'office-finance-activity':data.activity_text,'office-finance-month':data.month_label};
     for (const [id,value] of Object.entries(text)) if ($(id)) $(id).textContent = value;
-    $('live-wealth-source').textContent = data.net_worth_date ? 'Patrimônio informado por você · referência ' + data.net_worth_date.split('-').reverse().join('/') : 'Informe ativos e dívidas para calcular seu patrimônio manual.';
+    if ($('live-wealth-source')) $('live-wealth-source').hidden = !text['live-wealth-source'];
+    const issues = Array.isArray(wealth?.issues) ? wealth.issues : [];
+    const coverage = $('live-wealth-coverage');
+    if (coverage) {
+      coverage.hidden = issues.length === 0;
+      $('live-wealth-issues').replaceChildren(...issues.map(message => {
+        const item = document.createElement('li');
+        item.textContent = message;
+        return item;
+      }));
+    }
     if ($('live-finance-month')) $('live-finance-month').textContent = data.month_label + ' · acompanhamento financeiro';
     $('finance-live-stamp').textContent = 'Conferido em ' + stamp(data.snapshot_at) + (data.mode === 'bank' ? ' · gastos bancários via Pluggy, em BRL.' : ' · gastos informados por você.');
     if ($('office-finance-stamp')) $('office-finance-stamp').textContent = 'Conferido em ' + stamp(data.snapshot_at);
-    if ($('office-finance-source')) $('office-finance-source').textContent = data.net_worth_date ? 'Ativos menos dívidas · referência ' + data.net_worth_date.split('-').reverse().join('/') : 'Cadastre seus ativos e dívidas para calcular o patrimônio. Os gastos aparecem após o primeiro lançamento.';
+    if ($('office-finance-source')) $('office-finance-source').textContent = wealth ? [wealth.detail, issues.length ? 'Veja a cobertura na Visão geral.' : ''].filter(Boolean).join(' ') : manualDetail;
     // Preserve an in-progress edit when another tab changes the snapshot.
     if (!$('net-worth-editor').open) {
       if ($('net-worth-assets')) $('net-worth-assets').value = data.assets_text || '';

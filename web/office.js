@@ -14,7 +14,7 @@
   let camera = null, size = {width:1,height:1}, dpr = 1, paused = false, inView = true, ready = false;
   let raf = 0, previousTime = 0, frameCount = 0, generation = 0, errorText = '', drag = null, pinch = null, hover = null;
   const initialFinance = $('office-finance-panel')?.dataset;
-  let finance = display?.project(initialFinance ? {mode:'manual',net_worth_text:initialFinance.wealth,expense_text:initialFinance.expenses,pending_text:initialFinance.pending,top_category:initialFinance.category,top_category_text:initialFinance.categoryAmount,activity_text:initialFinance.activity,month_label:initialFinance.month} : null);
+  let finance = display?.project(initialFinance ? {mode:'manual',net_worth_text:initialFinance.wealth,pluggy_wealth:initialFinance.wealthStatus ? {net:initialFinance.wealth,status:initialFinance.wealthStatus} : null,expense_text:initialFinance.expenses,pending_text:initialFinance.pending,top_category:initialFinance.category,top_category_text:initialFinance.categoryAmount,activity_text:initialFinance.activity,month_label:initialFinance.month} : null);
   let financeConnection = 'connecting';
   let routineIndex = 0, routineTimer, activity = {};
   try { paused = localStorage.getItem('conselho-ambient-paused') === 'true'; } catch {}

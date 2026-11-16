@@ -62,12 +62,15 @@ func TestInvestmentDashboardSummaryAndInitialHTMLRemainSeparate(t *testing.T) {
 	if summary.Investments.ActiveCount != 1 || summary.Investments.WithdrawnCount != 1 || summary.Investments.Totals[0].Balance == nil || *summary.Investments.Totals[0].Balance != "123.45" || summary.NetWorthCents == nil || *summary.NetWorthCents != 10000 {
 		t.Fatal("merged manual wealth or omitted imports", summary)
 	}
+	if bank := summary.PluggyWealth; bank == nil || bank.Net != "R$ 123,45" || bank.Status != "Parcial" || len(bank.Issues) == 0 {
+		t.Fatalf("bank wealth and coverage: %+v", bank)
+	}
 	page := call(t, server, "GET", "/dashboard", "", cookies, "")
 	body, err := io.ReadAll(page.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`id="investment-panel"`, "Investimentos via Pluggy", "R$ 123,45", "R$ 100,00", `id="investment-composition"`, `Título &lt;script&gt;unsafe&lt;/script&gt;`, `</html>`} {
+	for _, want := range []string{`id="investment-panel"`, "Investimentos via Pluggy", `id="live-net-worth">R$ 123,45`, `id="live-manual-wealth">R$ 100,00`, "Ver dados que faltam", `id="investment-composition"`, `Título &lt;script&gt;unsafe&lt;/script&gt;`, `</html>`} {
 		if !strings.Contains(string(body), want) {
 			t.Fatalf("initial HTML missing %q", want)
 		}

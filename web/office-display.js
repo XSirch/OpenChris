@@ -6,10 +6,12 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   function project(data) {
-    if (!data || data.mode !== 'manual') return null;
+    if (!data || !['manual','bank'].includes(data.mode)) return null;
     const text = (key,fallback) => typeof data[key] === 'string' && data[key].trim() ? data[key] : fallback;
     return {
-      wealth:text('net_worth_text','Não informado'), expenses:text('expense_text','Sem lançamentos'),
+      wealth:data.pluggy_wealth?.net || text('net_worth_text','Não informado'),
+      wealthTitle:data.pluggy_wealth ? (data.pluggy_wealth.status === 'Atualizado' ? 'PATRIMÔNIO PLUGGY' : 'PATRIMÔNIO PARCIAL') : 'PATRIMÔNIO MANUAL',
+      expenses:text('expense_text','Sem lançamentos'),
       pending:text('pending_text','Sem pendências'), category:text('top_category','Sem categoria'),
       categoryAmount:text('top_category_text',''), activity:text('activity_text','Sem atividade registrada'),
       month:text('month_label','Registros manuais')
@@ -26,7 +28,7 @@
       while (size > 7 && ctx.measureText(value).width > width) { size -= 0.5; ctx.font = weight + ' ' + size + 'px Manrope, sans-serif'; }
       ctx.fillText(value,x,y,width);
     };
-    text('PATRIMÔNIO LÍQUIDO',8,13,8,'#b0c4d0',117);
+    text(data.wealthTitle,8,13,8,'#b0c4d0',117);
     text(connection === 'live' ? 'AO VIVO' : connection === 'connecting' ? 'ABRINDO' : 'SEM SINAL',128,13,6,'#8bcebb',40);
     text(data.wealth,8,34,18,'#f9efdc',screen.width-16,750);
     ctx.fillStyle = '#294452'; ctx.fillRect(8,42,screen.width-16,1);

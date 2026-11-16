@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const path = require('node:path');
 function harness(month='',responseStatus=200) {
   const nodes=new Map();
-  for(const id of ['finance-live-state','live-net-worth','live-expenses','live-pending','live-top-category','live-top-amount','live-activity','live-wealth-source','finance-live-stamp','net-worth-editor','net-worth-assets','net-worth-liabilities','live-finance-month'])nodes.set(id,{textContent:'',dataset:{},open:false,value:''});
+  for(const id of ['finance-live-state','live-net-worth','live-expenses','live-pending','live-top-category','live-top-amount','live-activity','live-wealth-source','finance-live-stamp','net-worth-editor','net-worth-assets','net-worth-liabilities','live-finance-month','live-wealth-status','live-manual-wealth','live-wealth-debt','office-finance-wealth'])nodes.set(id,{textContent:'',dataset:{},open:false,value:''});
   nodes.get('finance-live-state').dataset.month=month;
   const listeners={},streams=[],requests=[];let redirected;
   const document={hidden:false,getElementById:id=>nodes.get(id),addEventListener(type,callback){listeners[type]=callback;}};
@@ -44,11 +44,16 @@ test('a live update preserves edits already open in the wealth form',()=>{
   assert.equal(h.nodes.get('finance-live-state').dataset.state,'live');
 });
 
-test('bank summaries update expenses while keeping manual wealth clearly identified',()=>{
+test('bank summaries update the wealth card and office without replacing manual wealth',()=>{
   const h=harness();
-  h.streams[0].listeners['finance.snapshot']({data:JSON.stringify({mode:'bank',month_label:'novembro de 2026',expense_text:'R$ 250,00',net_worth_text:'R$ 5.000,00',net_worth_date:'2026-11-01',snapshot_at:'2026-11-13T15:00:00Z'})});
+  h.streams[0].listeners['finance.snapshot']({data:JSON.stringify({mode:'bank',month_label:'novembro de 2026',expense_text:'R$ 250,00',net_worth_text:'R$ 5.000,00',net_worth_date:'2026-11-01',snapshot_at:'2026-11-13T15:00:00Z',pluggy_wealth:{net:'R$ 3.000,00',status:'Parcial',debt:'R$ 500,00',detail:'Atualização bancária mais antiga: 12/11/2026.'}})});
   assert.equal(h.nodes.get('live-expenses').textContent,'R$ 250,00');
-  assert.match(h.nodes.get('live-wealth-source').textContent,/informado por você/);
+  assert.equal(h.nodes.get('live-net-worth').textContent,'R$ 3.000,00');
+  assert.equal(h.nodes.get('office-finance-wealth').textContent,'R$ 3.000,00');
+  assert.equal(h.nodes.get('live-manual-wealth').textContent,'R$ 5.000,00');
+  assert.equal(h.nodes.get('live-wealth-status').textContent,'Parcial');
+  assert.equal(h.nodes.get('live-wealth-debt').textContent,'R$ 500,00');
+  assert.match(h.nodes.get('live-wealth-source').textContent,/12\/11\/2026/);
   assert.match(h.nodes.get('finance-live-stamp').textContent,/gastos bancários via Pluggy/);
   assert.equal(h.nodes.get('finance-live-state').dataset.state,'live');
 });

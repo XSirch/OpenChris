@@ -43,6 +43,58 @@ type FinanceSummary struct {
 	LastActivity           *time.Time              `json:"last_activity"`
 	SnapshotAt             string                  `json:"snapshot_at"`
 	Investments            pluggy.Portfolio        `json:"investments"`
+	PluggyWealth           *pluggyWealthCard       `json:"pluggy_wealth,omitempty"`
+}
+
+type pluggyWealthCard struct {
+	pluggy.Wealth
+	Status string `json:"status"`
+	Detail string `json:"detail"`
+}
+
+func bankWealthCard(wealth pluggy.Wealth, err error) *pluggyWealthCard {
+	card := &pluggyWealthCard{Wealth: wealth, Status: "Atualizado"}
+	if err != nil {
+		card.Issues = []string{"A consulta ao patrimônio está indisponível. Tente novamente em instantes."}
+	}
+	switch {
+	case wealth.Net == "":
+		card.Net, card.Status = "Indisponível", "Sem total"
+	case len(card.Issues) > 0:
+		card.Status = "Parcial"
+	}
+	loc, _ := time.LoadLocation("America/Sao_Paulo")
+	if !wealth.BankAsOf.IsZero() {
+		card.Detail = "Atualização bancária mais antiga: " + wealth.BankAsOf.In(loc).Format("02/01/2006 às 15:04") + "."
+	}
+	if !wealth.LastImported.IsZero() {
+		if card.Detail != "" {
+			card.Detail += " "
+		}
+		card.Detail += "Última importação: " + wealth.LastImported.In(loc).Format("02/01/2006 às 15:04") + "."
+	}
+	return card
+}
+
+func (s FinanceSummary) WealthTitle() string {
+	if s.PluggyWealth != nil {
+		return "Patrimônio via Pluggy"
+	}
+	return "Patrimônio líquido manual"
+}
+
+func (s FinanceSummary) WealthValue() string {
+	if s.PluggyWealth != nil {
+		return s.PluggyWealth.Net
+	}
+	return s.NetWorthText
+}
+
+func (s FinanceSummary) ManualWealthDetail() string {
+	if date, err := time.Parse("2006-01-02", s.NetWorthDate); err == nil {
+		return "Referência manual: " + date.Format("02/01/2006") + "."
+	}
+	return "Informe ativos e dívidas para calcular."
 }
 
 func (a *App) financeSummary(ctx context.Context, month string) (FinanceSummary, error) {
@@ -105,6 +157,10 @@ func (a *App) financeSummary(ctx context.Context, month string) (FinanceSummary,
 	summary.Investments, err = a.pluggyService.Portfolio(ctx)
 	if err != nil {
 		summary.Investments = pluggy.EmptyPortfolio("unavailable")
+	}
+	if a.config.Pluggy.Enabled {
+		bank, bankErr := a.pluggyService.Wealth(ctx)
+		summary.PluggyWealth = bankWealthCard(bank, bankErr)
 	}
 	if a.config.Production && !a.config.Codex.Enabled {
 		summary.ActivityText = "IA não configurada"

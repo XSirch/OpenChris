@@ -27,7 +27,7 @@ func (a *App) ready(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 	var migrated bool
-	err := a.store.DB.QueryRow(ctx, `SELECT count(*)=9 FROM schema_migrations WHERE version BETWEEN 1 AND 9`).Scan(&migrated)
+	err := a.store.DB.QueryRow(ctx, `SELECT count(*)=10 FROM schema_migrations WHERE version BETWEEN 1 AND 10`).Scan(&migrated)
 	if err == nil && migrated {
 		// Resolve required columns even when the tables are empty.
 		_, err = a.store.DB.Exec(ctx, `
@@ -45,7 +45,7 @@ func (a *App) ready(w http.ResponseWriter, r *http.Request) {
 			SELECT sequence,user_id,event_type,payload FROM stream_events LIMIT 0;
 			SELECT bot_id,update_id,incoming_event_id,status FROM telegram_inbox LIMIT 0;
 			SELECT bot_id,update_id,status,attempts FROM telegram_outbox LIMIT 0;
-			SELECT item_id,user_id,status,last_synced_at,consent_expires_at FROM pluggy_items LIMIT 0;
+			SELECT item_id,user_id,status,last_synced_at,consent_expires_at,wealth_loans FROM pluggy_items LIMIT 0;
 			SELECT user_id,external_id,item_id,payload FROM pluggy_accounts LIMIT 0;
 			SELECT user_id,external_id,item_id,payload FROM pluggy_transactions LIMIT 0;
 			SELECT user_id,external_id,item_id,payload FROM pluggy_investments LIMIT 0;
