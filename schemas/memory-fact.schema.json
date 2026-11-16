@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/conselho/schemas/memory-fact.schema.json",
+  "title": "memory-fact",
+  "description": "Fato versionado e temporal; nao confundir AGENT_CLAIM com USER_PREFERENCE.",
+  "type": "object",
+  "properties": {
+    "memory_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "const": "memory.fact.v1"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "USER_PREFERENCE",
+        "USER_CONSTRAINT",
+        "USER_GOAL",
+        "USER_INTENT",
+        "PERSONAL_FACT",
+        "AGENT_CLAIM",
+        "LAW_EVIDENCE",
+        "STRATEGY_HYPOTHESIS"
+      ]
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1
+    },
+    "predicate": {
+      "type": "string",
+      "minLength": 1
+    },
+    "value": {},
+    "authority": {
+      "type": "string",
+      "enum": [
+        "USER_EXPLICIT",
+        "USER_INFERRED",
+        "AUTHORIZED_SOURCE",
+        "AGENT_HYPOTHESIS",
+        "EXTERNAL_EVIDENCE"
+      ]
+    },
+    "source_event_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "active",
+        "conflicted",
+        "superseded",
+        "deleted"
+      ]
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": [
+        "public",
+        "aggregated",
+        "restricted",
+        "secret"
+      ]
+    },
+    "valid_from": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_to": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "supersedes": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "confidence_label": {
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "inferred",
+        "uncertain"
+      ]
+    }
+  },
+  "required": [
+    "memory_id",
+    "schema_version",
+    "user_id",
+    "kind",
+    "subject",
+    "predicate",
+    "value",
+    "authority",
+    "source_event_ids",
+    "status",
+    "sensitivity",
+    "valid_from",
+    "valid_to",
+    "recorded_at",
+    "version",
+    "confidence_label"
+  ],
+  "additionalProperties": false
+}

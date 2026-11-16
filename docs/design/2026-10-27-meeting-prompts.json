@@ -1,0 +1,34 @@
+[
+  {
+    "mode": "built-in image_gen",
+    "use_case": "identity-preserve",
+    "references": [
+      "assets/office/agents-seated.png",
+      "evidence/meeting-poses/reference-table.png"
+    ],
+    "original_output": "C:/Users/chris/.codex/generated_images/01a17a36-8266-7f82-9921-3f1fe8b0c33f/exec-197e8bc5-1d7f-4ebd-b54f-db9ece50f9c5.png",
+    "saved_asset": "assets/office/agents-meeting-front.png",
+    "prompt": "Use case: identity-preserve. Asset: transparent pixel-art sprite atlas for the established CONSELHO office game. Edit target image 1: preserve exactly its 23 identities in their existing reading order and its 6 columns by 4 rows, final bottom-right cell empty. Reference image 2 is the conference table camera perspective only; do not copy furniture into the atlas. Create seated MEETING poses seen from above and in FRONT three-quarter view, facing toward SCREEN-LOWER-RIGHT (south-east). We can see faces, fronts of shirts and chests. Bodies should lean slightly forward in engaged listening, shoulders relaxed, bent hips and knees, both forearms extended forward with relaxed OPEN palms resting on an invisible meeting-table edge at screen-right. NO TYPING hands, no clenched fists. Draw anatomically seated legs of natural proportions, no squashed standing bodies. Keep each face, skin tone, hair, outfit, accessories and size recognizably identical. Same crisp pixel-art illustration style and dark outlines. EXACTLY 23 whole human cutouts in the same 6x4 atlas layout, 1536x1024, each in its own 256x256 cell with ample clear space. No chair, no table, no laptop, no backdrop, no colored rectangles, no labels, no text, no shadows. Genuine transparent alpha around and between all figures."
+  },
+  {
+    "mode": "built-in image_gen",
+    "use_case": "identity-preserve",
+    "references": [
+      "assets/office/agents-seated-rear.png",
+      "evidence/meeting-poses/reference-table.png"
+    ],
+    "original_output": "C:/Users/chris/.codex/generated_images/01a17a36-8266-7f82-9921-3f1fe8b0c33f/exec-ddd9917e-4376-4e6d-bf11-10ad79180597.png",
+    "superseded_by": "background-extraction pass",
+    "prompt": "Use case: identity-preserve. Asset: transparent pixel-art game atlas. Edit target image 1 contains the 23 established character identities; preserve precisely its reading order, exact 6 columns and 4 rows, bottom-right cell empty, 1536x1024. Image 2 is only reference for the conference-table camera and must not appear in the output. Change every figure to a MEETING listening pose seen from above and BEHIND in rear three-quarter view, facing SCREEN-UPPER-RIGHT (north-east). We should see backs of heads, backs of jackets, only a sliver of cheek. Each human sits naturally with bent hips and knees, torso leaning slightly forward, forearms reaching farther toward upper-right and resting calmly on the edge of an invisible meeting table. Relaxed OPEN hands and flat palms, no typing, no fists, no exaggerated gesture. Keep hair, skin, outfits, glasses, accessories and body proportions exactly recognizable. Whole body with visible shoes fully inside its own cell, clear transparent gaps, consistent scale. Same crisp pixel-art dark outlines as input. Human cutouts ONLY: no table, chair, computer, scenery, cell rectangle, halo, shadows, text or watermark. Genuine alpha transparency throughout all empty pixels."
+  },
+  {
+    "mode": "built-in image_gen",
+    "use_case": "background-extraction",
+    "references": [
+      "C:/Users/chris/.codex/generated_images/01a17a36-8266-7f82-9921-3f1fe8b0c33f/exec-ddd9917e-4376-4e6d-bf11-10ad79180597.png"
+    ],
+    "original_output": "C:/Users/chris/.codex/generated_images/01a17a36-8266-7f82-9921-3f1fe8b0c33f/exec-91f35808-a2c0-4017-92d8-8b2060ecc55c.png",
+    "saved_asset": "assets/office/agents-meeting-rear.png",
+    "prompt": "Use case: background-extraction. Edit ONLY the alpha matte of this sprite atlas. Preserve every human pixel's appearance, every identity, every pose, scale and exact location in the existing 1536x1024 6-column x4-row layout. Remove ALL residual white, cream or gray backdrop, soft halos, gradients and translucent cell rectangles around every human. Every NON-HUMAN pixel must be 100 percent transparent alpha ZERO, including between arms and body, gaps between legs, every cell corner and background immediately adjacent to hair/clothes. Keep only clean crisp human silhouettes with a hard pixel-art contour. No glow, no matte fringe, no shadows, no semi-transparent background. Bottom-right cell remains completely empty. Do not redraw, rotate, move or add anything. Output a genuine clean RGBA cutout sprite atlas."
+  }
+]

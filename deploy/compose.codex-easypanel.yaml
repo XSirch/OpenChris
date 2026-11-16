@@ -1,0 +1,27 @@
+# Runtime only. The separate EasyPanel app builds this local image.
+services:
+  conselho-codex-runtime:
+    image: easypanel/app/conselho-codex:latest
+    pull_policy: never
+    user: "10001:10001"
+    environment:
+      CODEX_RUNNER_TOKEN: ${CODEX_RUNNER_TOKEN:?Defina o segredo privado do serviço}
+      CODEX_AUTH_KEY: ${CODEX_AUTH_KEY:?Defina a chave AES de 32 bytes em base64}
+    volumes:
+      - codex_account:/state
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=128m,mode=1777
+    read_only: true
+    mem_limit: 768m
+    cpus: "1.0"
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    networks:
+      easypanel:
+        aliases: [conselho-codex-internal]
+    restart: unless-stopped
+networks:
+  easypanel:
+    external: true
+volumes:
+  codex_account:

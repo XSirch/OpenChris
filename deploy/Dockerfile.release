@@ -1,0 +1,9 @@
+FROM alpine:3.22@sha256:2e0b81d60597f449baa56dc25d355367869d2dca4cd57e866f1e2b52af3eb55f
+RUN apk add --no-cache ca-certificates && addgroup -g 10001 conselho && adduser -D -u 10001 -G conselho conselho
+WORKDIR /app
+COPY --chmod=0555 conselho /app/conselho
+USER 10001:10001
+ENV APP_ENV=production LISTEN_ADDR=:8080
+EXPOSE 8080
+HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 CMD wget -q --spider http://127.0.0.1:8080/readyz || exit 1
+ENTRYPOINT ["/app/conselho"]

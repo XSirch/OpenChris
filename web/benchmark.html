@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Benchmark local · CONSELHO</title>
+  <style>
+    :root { color-scheme: dark; --page:#10191e; --surface:#19252a; --ink:#f1e9da; --muted:#b5beb8; --line:#41504e; --amber:#e6b567; --wood:#795b3d; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--page); color:var(--ink); font:16px/1.6 "Segoe UI",sans-serif; }
+    ::selection { background:var(--amber); color:var(--page); }
+    :focus-visible { outline:3px solid var(--amber); outline-offset:4px; }
+    body { scrollbar-color:var(--wood) var(--page); }
+    header,main,footer { width:min(1120px,calc(100% - 64px)); margin-inline:auto; }
+    header { padding-block:28px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
+    .brand { letter-spacing:.16em; font-size:.875rem; font-weight:650; }
+    .scope { color:var(--amber); font-size:.875rem; }
+    main { padding-block:48px 32px; }
+    h1,h2 { font-family:Georgia,"Times New Roman",serif; font-weight:400; line-height:1.15; text-wrap:balance; }
+    h1 { margin:0 0 20px; font-size:clamp(2rem,5vw,3.5rem); max-width:20ch; }
+    h2 { font-size:1.6rem; margin:0 0 12px; }
+    p { max-width:72ch; margin:0 0 16px; }
+    .intro { color:var(--muted); }
+    .layout { display:grid; grid-template-columns:1fr 1.4fr; gap:48px; margin-top:48px; }
+    section { min-width:0; }
+    .description { color:var(--muted); font-size:.9375rem; }
+    figure { margin:24px 0 16px; }
+    svg { display:block; width:100%; height:auto; }
+    .activity { background:var(--surface); padding:20px; }
+    .axis { stroke:var(--line); stroke-width:1; }
+    .bar { fill:var(--wood); }
+    .trace { stroke:var(--amber); stroke-width:2; fill:none; stroke-dasharray:600; stroke-dashoffset:0; animation:trace 5s ease-out infinite; }
+    @keyframes trace { 0% { stroke-dashoffset:600; } 65%,100% { stroke-dashoffset:0; } }
+    [data-paused="true"] .trace { animation-play-state:paused; }
+    figcaption { margin-top:12px; color:var(--muted); font-size:.875rem; }
+    button { color:var(--ink); background:var(--surface); border:1px solid var(--line); padding:11px 18px; min-height:44px; border-radius:6px; font:inherit; cursor:pointer; }
+    button:hover { border-color:var(--amber); }
+    button:disabled { opacity:.55; cursor:wait; }
+    .scene { border-block:1px solid var(--line); padding-block:24px; margin-top:24px; }
+    .agent-shape { fill:var(--surface); stroke:var(--amber); stroke-width:1; }
+    .agent-label { fill:var(--ink); font-family:"Segoe UI",sans-serif; font-size:13px; text-anchor:middle; }
+    .states { padding:0; list-style:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px 16px; margin:24px 0 0; font-size:.875rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .states span { color:var(--ink); margin-right:8px; }
+    footer { padding-block:24px 32px; border-top:1px solid var(--line); color:var(--muted); font-size:.875rem; }
+    @media (max-width:760px) { header,main,footer { width:calc(100% - 40px); } main { padding-top:32px; } .layout { grid-template-columns:1fr; gap:40px; margin-top:32px; } .states { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; } }
+    @media (prefers-reduced-motion:reduce) { .trace { animation:none; } }
+  </style>
+</head>
+<body data-paused="false">
+  <header><span class="brand">CONSELHO</span><span class="scope">Ensaio local · dados sintéticos</span></header>
+  <main>
+    <h1>O mesmo contrato, duas stacks.</h1>
+    <p class="intro">Go e Django servem este documento para comparar o custo da mesma resposta. O benchmark mede consulta, gravação durável, snapshot SSE e transferência desta página.</p>
+    <div class="layout">
+      <section aria-labelledby="activity-title">
+        <h2 id="activity-title">Amostra de atividade</h2>
+        <p class="description">Sequência fixa em unidades sintéticas. Os tempos medidos ficam no arquivo de evidência do benchmark.</p>
+        <figure class="activity">
+          <svg viewBox="0 0 340 160" role="img" aria-labelledby="chart-title chart-desc">
+            <title id="chart-title">Sete valores de atividade sintética</title>
+            <desc id="chart-desc">Valores: 4, 7, 3, 8, 5, 9 e 6 unidades. Não representa latência ou resultado financeiro.</desc>
+            <path class="axis" d="M10 140H330"/>
+            <g class="bar"><rect x="18" y="92" width="28" height="48"/><rect x="64" y="56" width="28" height="84"/><rect x="110" y="104" width="28" height="36"/><rect x="156" y="44" width="28" height="96"/><rect x="202" y="80" width="28" height="60"/><rect x="248" y="32" width="28" height="108"/><rect x="294" y="68" width="28" height="72"/></g>
+            <path class="trace" d="M32 92L78 56L124 104L170 44L216 80L262 32L308 68"/>
+          </svg>
+          <figcaption>4 · 7 · 3 · 8 · 5 · 9 · 6 unidades</figcaption>
+        </figure>
+        <button id="motion-toggle" type="button" aria-pressed="false">Pausar animação</button>
+        <p id="motion-status" class="description" role="status" style="margin-top:16px">A animação percorre a amostra fixa.</p>
+      </section>
+      <section aria-labelledby="scene-title">
+        <h2 id="scene-title">23 agentes em espera</h2>
+        <p class="description">Geometria provisória para o ensaio técnico. Todos os estados desta cena são sintéticos e ociosos.</p>
+        <div class="scene"><svg id="agents" viewBox="0 0 500 235" role="img" aria-labelledby="agents-title agents-desc"><title id="agents-title">Cena técnica com 23 agentes</title><desc id="agents-desc">De A01 a A23, todos em espera. A lista abaixo apresenta os mesmos estados em texto.</desc></svg></div>
+        <ul id="states" class="states" aria-label="Estados dos 23 agentes"></ul>
+        <noscript><p>A01 a A23: em espera. Ative JavaScript para exibir a geometria provisória.</p></noscript>
+      </section>
+    </div>
+  </main>
+  <footer>Validação sintética em uma máquina local. A cena usa formas provisórias; os personagens finais e a homologação em VPS ficam para outra etapa.</footer>
+  <script>
+    const namespace = 'http://www.w3.org/2000/svg';
+    const scene = document.getElementById('agents');
+    const states = document.getElementById('states');
+    for (let number = 1; number <= 23; number += 1) {
+      const id = 'A' + String(number).padStart(2, '0');
+      const x = 10 + ((number - 1) % 8) * 62;
+      const y = 10 + Math.floor((number - 1) / 8) * 76;
+      const group = document.createElementNS(namespace, 'g');
+      const shape = document.createElementNS(namespace, 'rect');
+      for (const [key, value] of Object.entries({ x, y, width:46, height:48, rx:5, class:'agent-shape' })) shape.setAttribute(key, value);
+      const label = document.createElementNS(namespace, 'text');
+      label.setAttribute('x', x + 23);
+      label.setAttribute('y', y + 29);
+      label.setAttribute('class', 'agent-label');
+      label.textContent = id;
+      group.append(shape, label);
+      scene.append(group);
+      const row = document.createElement('li');
+      const name = document.createElement('span');
+      name.textContent = id;
+      row.append(name, 'em espera');
+      states.append(row);
+    }
+    const button = document.getElementById('motion-toggle');
+    const status = document.getElementById('motion-status');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    let paused = false;
+    function updateMotion() {
+      if (reducedMotion.matches) {
+        document.body.dataset.paused = 'true';
+        button.disabled = true;
+        button.setAttribute('aria-pressed', 'true');
+        button.textContent = 'Animação desativada';
+        status.textContent = 'Movimento reduzido ativo. A amostra permanece estática.';
+        return;
+      }
+      button.disabled = false;
+      document.body.dataset.paused = String(paused);
+      button.setAttribute('aria-pressed', String(paused));
+      button.textContent = paused ? 'Retomar animação' : 'Pausar animação';
+      status.textContent = paused ? 'Animação pausada. A amostra continua visível.' : 'A animação percorre a amostra fixa.';
+    }
+    button.addEventListener('click', () => { paused = !paused; updateMotion(); });
+    reducedMotion.addEventListener('change', updateMotion);
+    updateMotion();
+  </script>
+</body>
+</html>

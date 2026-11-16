@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="csrf-token" content="{{.CSRF}}">
+<title>Meus dados e objetivos · CONSELHO</title>
+<link rel="stylesheet" href="/static/base.css"><link rel="stylesheet" href="/static/app.css"><link rel="stylesheet" href="/static/personal-finance.css">
+<script src="/static/personal-finance.js" defer></script>
+</head>
+<body class="pixel-dashboard profile-page">
+<a class="skip-link" href="#profile-main">Ir para meus dados</a>{{template "navigation" .}}
+<div class="dashboard-shell"><header class="app-topbar"><a href="/dashboard" class="wordmark">CONSELHO</a><a href="/dashboard">Voltar ao painel</a></header>
+<main id="profile-main" class="profile-main">
+<h1>Meus dados e objetivos</h1><p class="profile-intro">O conselho usa estas informações para avaliar quanto você pode investir e quais opções combinam com seus planos. Você pode salvar aos poucos. Deixe em branco o que ainda não sabe; zero significa que o valor foi conferido.</p>
+<section class="personal-finance-panel" data-personal-finance aria-labelledby="profile-pending-title"><h2 id="profile-pending-title">O que falta para analisar suas finanças</h2><p data-personal-status role="status">Consultando as pendências atuais…</p><ul data-personal-issues class="personal-issues"></ul></section>
+<noscript><p class="profile-feedback">Ative o JavaScript para consultar e salvar seu perfil financeiro.</p></noscript>
+<form id="personal-profile-form">
+<fieldset data-profile-fields disabled><legend class="sr-only">Perfil financeiro</legend>
+<section id="goals" class="profile-section"><h2>Seus objetivos</h2><p>Informe o que deseja alcançar, o valor necessário e quando pretende usar o dinheiro.</p><div id="profile-goals"></div><button id="profile-add-goal" type="button" class="button-quiet">Adicionar objetivo</button></section>
+<section class="profile-section" aria-labelledby="profile-cash-title"><h2 id="profile-cash-title">O que precisa ficar protegido</h2><p>Considere apenas a parte de cada valor que está na conta corrente. Não inclua a mesma quantia em dois campos.</p><div class="profile-fields">
+<label for="commitments_30_days_cents">Contas e compromissos dos próximos 30 dias, em reais<input id="commitments_30_days_cents" name="commitments_30_days_cents" inputmode="decimal" type="text" maxlength="30"><small>Valores que ainda serão pagos com o saldo da conta.</small></label>
+<label for="minimum_checking_cents">Mínimo que deseja manter em conta, em reais<input id="minimum_checking_cents" name="minimum_checking_cents" inputmode="decimal" type="text" maxlength="30"><small>Margem para despesas do dia a dia, além dos compromissos acima.</small></label>
+<label for="protected_checking_cents">Outros valores reservados em conta, em reais<input id="protected_checking_cents" name="protected_checking_cents" inputmode="decimal" type="text" maxlength="30"><small>Dinheiro já separado para um objetivo ou reserva. Não inclua aplicações existentes.</small></label>
+</div></section>
+<section class="profile-section" aria-labelledby="profile-reserve-title"><h2 id="profile-reserve-title">Sua reserva</h2><div class="profile-fields">
+<label for="reserve_current_cents">Reserva já formada, em reais<input id="reserve_current_cents" name="reserve_current_cents" inputmode="decimal" type="text" maxlength="30"><small>Total que você considera disponível para emergências, em conta ou aplicado.</small></label>
+<label for="reserve_target_cents">Valor desejado para a reserva, em reais<input id="reserve_target_cents" name="reserve_target_cents" inputmode="decimal" type="text" maxlength="30"><small>Este valor orienta a prioridade dos próximos aportes.</small></label>
+</div></section>
+<section class="profile-section" aria-labelledby="profile-risk-title"><h2 id="profile-risk-title">Como você investe</h2><p>Este perfil é declarado por você e pode ser atualizado quando suas necessidades mudarem.</p><div class="profile-fields">
+<label for="risk_profile">Tolerância a perdas<select id="risk_profile" name="risk_profile"><option value="">Ainda não informado</option><option value="conservative">Conservador: priorizo preservar o dinheiro</option><option value="moderate">Moderado: aceito oscilações limitadas</option><option value="aggressive">Arrojado: aceito perdas e oscilações maiores</option></select></label>
+<label for="experience">Experiência com investimentos<select id="experience" name="experience"><option value="">Ainda não informado</option><option value="beginner">Iniciante</option><option value="intermediate">Já conheço alguns produtos</option><option value="experienced">Tenho experiência com produtos e riscos</option></select></label>
+<label for="liquidity_days">Prazo máximo para resgatar, em dias<input id="liquidity_days" name="liquidity_days" type="number" min="0" max="3650" step="1"><small>Use 0 se precisa poder resgatar no mesmo dia.</small></label>
+<label for="restrictions">Preferências ou restrições<textarea id="restrictions" name="restrictions" rows="4" maxlength="1000" placeholder="Ex.: evitar criptoativos ou produtos sem resgate antecipado"></textarea><small>Não inclua senhas, documentos ou números de conta.</small></label>
+</div></section>
+<section class="profile-section profile-confirmation"><h2>Confirme os dados</h2><label class="profile-checkbox" for="confirmed"><input id="confirmed" name="confirmed" type="checkbox"><span>Conferi meus objetivos, valores e perfil de risco. Eles podem orientar as sugestões do conselho.</span></label><p id="profile-last-confirmed"></p><p>Alterar um campo exige uma nova confirmação. Salvar dados incompletos mantém as pendências visíveis.</p></section>
+<div class="profile-actions"><button id="profile-save" class="button-primary" type="submit">Salvar meus dados</button><a class="button-quiet" href="/reports">Ver relatórios</a></div>
+</fieldset>
+<p id="profile-feedback" class="profile-feedback" role="status" aria-live="polite"></p>
+<button id="profile-reload" class="button-quiet" type="button">Recarregar dados salvos</button>
+</form>
+</main></div>
+</body></html>

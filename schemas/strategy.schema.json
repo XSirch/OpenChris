@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/conselho/schemas/strategy.schema.json",
+  "title": "strategy",
+  "description": "Estratégia versionada, passivel de pesquisa e rejeicao fundamentada.",
+  "type": "object",
+  "properties": {
+    "strategy_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "const": "strategy.v1"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "mandate": {
+      "type": "string",
+      "enum": [
+        "long_term",
+        "tactical",
+        "cross_mandate",
+        "not_applicable"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "research",
+        "candidate",
+        "eligible_with_conditions",
+        "paused",
+        "rejected",
+        "archived",
+        "invalidated"
+      ]
+    },
+    "hypothesis": {
+      "type": "string",
+      "minLength": 1
+    },
+    "time_horizon": {
+      "type": "string"
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "invalidation_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "eligible_instruments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uri": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "user",
+              "financial",
+              "official_law",
+              "market",
+              "agent",
+              "document"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_type",
+          "observed_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "legal_finding_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "review_due_at": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "last_reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_case_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uuid"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "strategy_id",
+    "schema_version",
+    "title",
+    "version",
+    "mandate",
+    "status",
+    "hypothesis",
+    "conditions",
+    "invalidation_conditions",
+    "eligible_instruments",
+    "risks",
+    "evidence",
+    "legal_finding_refs",
+    "review_due_at",
+    "last_reviewed_at"
+  ],
+  "additionalProperties": false
+}

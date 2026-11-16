@@ -1,0 +1,48 @@
+.integrations-root { margin-block: 26px; }
+.integration-toolbar { display: flex; align-items: flex-start; gap: 14px; margin-block: 0 20px; }
+.integration-toolbar > p { flex: 1; margin: 0; }
+.integration-toolbar .button-quiet { flex-shrink: 0; min-height: 40px; font-size: 12px; }
+.integration-feedback { color: var(--muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.integration-feedback[data-state=error] { color: var(--danger); }
+.integration-section { border-top: 1px solid var(--line); padding-block: 22px 28px; }
+.integration-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.integration-heading h3 { margin: 0; font-size: 19px; line-height: 1.4; }
+.integration-heading > span { color: var(--amber-light); font-size: 12px; line-height: 1.6; }
+.integration-note { color: var(--muted); font-size: 12px; line-height: 1.8; margin-block: 12px; overflow-wrap: anywhere; }
+.integration-health { margin: 16px 0; }
+.integration-health > div, .integration-record-values > div { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-block: 7px; }
+.integration-health dt, .integration-record-values dt { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.integration-health dd, .integration-record-values dd { margin: 0; text-align: right; color: var(--paper); font-size: 12px; line-height: 1.7; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.integration-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 18px; }
+.integration-actions button { font-size: 12px; min-height: 42px; }
+.integrations-root button:disabled { cursor: wait; opacity: .65; transform: none; box-shadow: none; }
+.integration-items, .integration-records { margin: 18px 0; padding: 0; list-style: none; }
+.integration-items > li, .integration-records > li { padding-block: 17px; border-bottom: 1px solid var(--line); }
+.integration-item-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; }
+.integration-item-heading strong, .integration-records strong { font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.integration-item-heading > span { font-size: 12px; color: var(--muted); }
+.integration-reference { font-size: 12px; color: var(--muted); margin-block: 8px; overflow-wrap: anywhere; }
+.integration-items .button-quiet { font-size: 12px; min-height: 40px; margin-top: 8px; }
+.integration-recovery { margin-block: 22px 6px; }
+.integration-recovery summary { color: var(--amber-light); cursor: pointer; font-size: 12px; line-height: 1.8; padding-block: 7px; }
+.integration-recovery label { display: block; font-size: 12px; color: var(--muted); margin-block: 15px 8px; }
+.integration-recovery input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--paper); font-size: 14px; }
+.integration-recovery button { margin-top: 12px; font-size: 12px; min-height: 42px; }
+.integration-data { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 22px; }
+.integration-data h3 { font-size: 19px; line-height: 1.4; }
+.integration-data-group { margin-top: 26px; }
+.integration-data-group h4 { font-size: 14px; line-height: 1.5; margin: 0 0 8px; }
+.integration-record-values { margin: 10px 0 0; }
+.integration-records { margin-top: 0; }
+.integration-record-values > div { padding-block: 4px; }
+.no-js .integrations-root button, .no-js .integration-recovery { display: none; }
+@media (max-width: 640px) {
+  .integration-heading h3, .integration-data h3 { font-size: 19px; }
+  .integration-section { padding-block: 24px; }
+  .integration-note, .integration-feedback, .integration-recovery summary { font-size: 14px; }
+  .integration-actions { align-items: stretch; flex-direction: column; }
+  .integration-actions button, .integration-recovery button { font-size: 14px; min-height: 44px; }
+  .integration-recovery input { font-size: 16px; }
+  .integration-health > div { flex-wrap: wrap; gap: 3px 14px; }
+  .integration-health dd { margin-inline-start: auto; }
+}

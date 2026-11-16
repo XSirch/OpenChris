@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0a151c">
+  <title>Entrar no CONSELHO</title>
+  <link rel="stylesheet" href="/static/base.css">
+  <link rel="stylesheet" href="/static/login.css">
+  <script src="/static/login.js" defer></script>
+</head>
+<body class="login-body" data-production="{{.Production}}">
+  <a class="skip-link" href="#login-form">Ir para a entrada</a>
+  <main class="login-page">
+    <section class="login-panel" aria-labelledby="login-title">
+      <a class="brand login-brand" href="/" aria-label="CONSELHO, início">{{template "brand" .}}</a>
+
+      <div class="login-content">
+        <h1 id="login-title">{{if .Production}}Suas finanças.<br><em>No seu<br class="login-title-break"> contexto.</em>{{else}}O contexto fica.<br><em>A conversa<br class="login-title-break"> continua.</em>{{end}}</h1>
+        <p class="login-description">{{if .Production}}Acompanhe seus gastos, categorias e patrimônio com os registros que você informa.{{else}}Retome o que importa, com a memória compartilhada entre o Telegram e o dashboard.{{end}}</p>
+
+        <form id="login-form" class="login-form" method="post" action="/login">
+          <input type="hidden" name="csrf" value="{{.CSRF}}">
+          <input type="hidden" name="return_to" value="{{.ReturnTo}}">
+          <label for="password">Senha de acesso</label>
+          <div class="password-field">
+            <svg class="icon password-lock" aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg>
+            <input id="password" name="password" type="password" autocomplete="current-password" required aria-describedby="password-help" autofocus>
+            <button id="toggle-password" class="icon-button password-toggle" type="button" aria-label="Mostrar senha" aria-controls="password" aria-pressed="false" hidden>
+              <svg class="icon eye-open" aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon eye-closed" aria-hidden="true" viewBox="0 0 24 24"><path d="m3 3 18 18M10.5 5.1 12 5c6.5 0 10 7 10 7a21 21 0 0 1-3.1 4.1M6.2 6.2A22 22 0 0 0 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.5M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+            </button>
+          </div>
+          <div class="password-feedback">
+            <span id="password-help">Acesso privado ao seu conselho.</span>
+            <span id="caps-lock" role="status" hidden>Caps Lock está ativado.</span>
+          </div>
+          <div id="login-error" class="login-error" role="alert" hidden>
+            <p id="login-error-text"></p>
+            <a id="login-refresh" href="/login?return_to={{.ReturnTo}}" hidden>Renovar a página de entrada</a>
+          </div>
+          <button class="button-primary login-submit" type="submit">
+            <span class="submit-label">Entrar no conselho</span>
+            <svg class="icon submit-arrow" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg>
+            <svg class="icon submit-spinner" aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+          </button>
+          <p id="login-status" class="sr-only" role="status" aria-live="polite"></p>
+        </form>
+
+        {{if and .Local (not .Production)}}
+        <div class="demo-access">
+          <p>Para testar: <code>demo-conselho</code></p>
+          <button id="fill-demo" type="button" hidden>Preencher senha<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m8 5 7 7-7 7"/></svg></button>
+        </div>
+        {{end}}
+      </div>
+
+      <footer class="login-footer">
+        <span class="validation-label"><span class="status-dot" aria-hidden="true"></span>{{if .Production}}Acesso privado{{else}}Ambiente de validação{{end}}</span>
+        <p>{{if .Production}}Consulte seus dados e relatórios após entrar.{{else}}Use somente informações fictícias.{{end}}</p>
+      </footer>
+    </section>
+
+    <aside class="login-room" aria-labelledby="room-title" data-focus="overview" data-ambient-paused="false">
+      <div class="room-stage">
+        <div class="room-pan">
+          <div class="room-plane">
+            <img class="room-image" src="/static/office/background.webp" width="1536" height="1024" alt="Escritório moderno em pixel art, com divisórias de vidro, estações de trabalho e mesa do conselho." fetchpriority="high" decoding="async">
+            <div class="room-light ambient-loop" aria-hidden="true"></div>
+            <div class="room-spotlight" aria-hidden="true"></div>
+            <button class="room-hotspot hotspot-library" type="button" data-room="library" aria-label="Explorar a memória" aria-pressed="false" aria-controls="room-description" hidden><span class="hotspot-mark" aria-hidden="true"></span><span class="hotspot-label">Memória</span></button>
+            <button class="room-hotspot hotspot-planning" type="button" data-room="planning" aria-label="Explorar o planejamento" aria-pressed="false" aria-controls="room-description" hidden><span class="hotspot-mark" aria-hidden="true"></span><span class="hotspot-label">Planejamento</span></button>
+            <button class="room-hotspot hotspot-council" type="button" data-room="council" aria-label="Explorar o conselho" aria-pressed="false" aria-controls="room-description" hidden><span class="hotspot-mark" aria-hidden="true"></span><span class="hotspot-label">Conselho</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="room-toolbar">
+        <span class="scene-disclosure">Cena ilustrativa</span>
+        <button id="ambient-toggle" class="room-motion-control" type="button" aria-pressed="false" hidden>
+          <svg class="icon motion-pause" aria-hidden="true" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></svg>
+          <svg class="icon motion-play" aria-hidden="true" viewBox="0 0 24 24"><path d="m9 5 10 7-10 7Z"/></svg>
+          <span>Pausar movimento</span>
+        </button>
+        <span id="motion-preference" class="motion-preference" hidden>Movimento reduzido</span>
+      </div>
+
+      <div class="room-caption">
+        <div id="room-description" aria-live="polite" aria-atomic="true">
+          <h2 id="room-title">{{if .Production}}Seu escritório financeiro.{{else}}Seu contexto tem lugar.{{end}}</h2>
+          <p id="room-copy">{{if .Production}}Seus registros manuais ficam salvos no aplicativo. O movimento dos personagens é apenas visual.{{else}}Conversas e preferências se encontram no mesmo espaço, para você continuar de onde parou.{{end}}</p>
+        </div>
+        <div class="room-explore">
+          <span id="room-instruction"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m5 3 14 9-7 1-3 7Z"/></svg>Explore os pontos do escritório</span>
+          <button id="room-reset" type="button" hidden><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 3H3v5M16 21h5v-5M3 8l6-6m12 14-6 6M16 3h5v5M3 16v5h5"/></svg>Ver espaço completo</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

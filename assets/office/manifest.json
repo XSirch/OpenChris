@@ -1,0 +1,2821 @@
+{
+  "version": 1,
+  "world": {
+    "width": 1536,
+    "height": 1024,
+    "background": "/static/office/background.webp",
+    "walkable": [
+      [
+        180,
+        390
+      ],
+      [
+        570,
+        215
+      ],
+      [
+        930,
+        315
+      ],
+      [
+        1080,
+        325
+      ],
+      [
+        1210,
+        390
+      ],
+      [
+        1340,
+        385
+      ],
+      [
+        1400,
+        430
+      ],
+      [
+        1370,
+        485
+      ],
+      [
+        1280,
+        555
+      ],
+      [
+        1435,
+        820
+      ],
+      [
+        1440,
+        930
+      ],
+      [
+        1220,
+        1010
+      ],
+      [
+        830,
+        1010
+      ],
+      [
+        650,
+        800
+      ],
+      [
+        460,
+        790
+      ],
+      [
+        340,
+        880
+      ],
+      [
+        170,
+        770
+      ]
+    ],
+    "obstacles": [
+      [
+        [
+          872,
+          486
+        ],
+        [
+          940,
+          453
+        ],
+        [
+          1123,
+          540
+        ],
+        [
+          1123,
+          602
+        ],
+        [
+          1050,
+          634
+        ],
+        [
+          872,
+          549
+        ]
+      ],
+      [
+        [
+          812,
+          455
+        ],
+        [
+          855,
+          433
+        ],
+        [
+          887,
+          453
+        ],
+        [
+          871,
+          515
+        ],
+        [
+          836,
+          533
+        ],
+        [
+          810,
+          511
+        ]
+      ],
+      [
+        [
+          997,
+          431
+        ],
+        [
+          1046,
+          409
+        ],
+        [
+          1077,
+          443
+        ],
+        [
+          1062,
+          493
+        ],
+        [
+          1018,
+          512
+        ],
+        [
+          996,
+          474
+        ]
+      ],
+      [
+        [
+          1078,
+          481
+        ],
+        [
+          1125,
+          458
+        ],
+        [
+          1153,
+          485
+        ],
+        [
+          1137,
+          533
+        ],
+        [
+          1090,
+          555
+        ],
+        [
+          1076,
+          523
+        ]
+      ],
+      [
+        [
+          829,
+          553
+        ],
+        [
+          876,
+          529
+        ],
+        [
+          930,
+          557
+        ],
+        [
+          940,
+          601
+        ],
+        [
+          880,
+          627
+        ],
+        [
+          833,
+          601
+        ]
+      ],
+      [
+        [
+          1089,
+          612
+        ],
+        [
+          1143,
+          585
+        ],
+        [
+          1183,
+          607
+        ],
+        [
+          1163,
+          665
+        ],
+        [
+          1118,
+          684
+        ],
+        [
+          1086,
+          659
+        ]
+      ],
+      [
+        [
+          1285,
+          658
+        ],
+        [
+          1370,
+          615
+        ],
+        [
+          1535,
+          680
+        ],
+        [
+          1535,
+          800
+        ],
+        [
+          1455,
+          780
+        ],
+        [
+          1310,
+          730
+        ],
+        [
+          1285,
+          728
+        ]
+      ],
+      [
+        [
+          1195,
+          590
+        ],
+        [
+          1285,
+          640
+        ],
+        [
+          1285,
+          800
+        ],
+        [
+          1195,
+          740
+        ]
+      ],
+      [
+        [
+          1425,
+          730
+        ],
+        [
+          1505,
+          755
+        ],
+        [
+          1535,
+          815
+        ],
+        [
+          1510,
+          895
+        ],
+        [
+          1430,
+          880
+        ]
+      ],
+      [
+        [
+          65,
+          565
+        ],
+        [
+          270,
+          540
+        ],
+        [
+          385,
+          680
+        ],
+        [
+          420,
+          800
+        ],
+        [
+          295,
+          875
+        ],
+        [
+          100,
+          780
+        ]
+      ],
+      [
+        [
+          330,
+          850
+        ],
+        [
+          565,
+          755
+        ],
+        [
+          740,
+          880
+        ],
+        [
+          755,
+          1023
+        ],
+        [
+          570,
+          1023
+        ],
+        [
+          350,
+          955
+        ]
+      ],
+      [
+        [
+          565,
+          120
+        ],
+        [
+          930,
+          230
+        ],
+        [
+          938,
+          345
+        ],
+        [
+          870,
+          322
+        ],
+        [
+          860,
+          285
+        ],
+        [
+          695,
+          230
+        ],
+        [
+          565,
+          210
+        ]
+      ],
+      [
+        [
+          1250,
+          255
+        ],
+        [
+          1290,
+          220
+        ],
+        [
+          1535,
+          310
+        ],
+        [
+          1535,
+          438
+        ],
+        [
+          1440,
+          415
+        ],
+        [
+          1420,
+          370
+        ],
+        [
+          1260,
+          315
+        ]
+      ],
+      [
+        [
+          1170,
+          225
+        ],
+        [
+          1188,
+          230
+        ],
+        [
+          1188,
+          377
+        ],
+        [
+          1170,
+          370
+        ]
+      ]
+    ],
+    "rooms": {
+      "memory": {
+        "x": 400,
+        "y": 400
+      },
+      "goals": {
+        "x": 730,
+        "y": 350
+      },
+      "council": {
+        "x": 800,
+        "y": 700
+      },
+      "legal": {
+        "x": 1180,
+        "y": 805
+      }
+    },
+    "interactives": [
+      {
+        "id": "finance-screen",
+        "label": "Ver painel financeiro",
+        "polygon": [
+          [
+            190,
+            130
+          ],
+          [
+            390,
+            52
+          ],
+          [
+            390,
+            182
+          ],
+          [
+            190,
+            260
+          ]
+        ],
+        "action": {
+          "type": "panel",
+          "target": "finance"
+        }
+      },
+      {
+        "id": "planning-desks",
+        "label": "Ver meta de exemplo",
+        "polygon": [
+          [
+            573,
+            120
+          ],
+          [
+            930,
+            232
+          ],
+          [
+            930,
+            285
+          ],
+          [
+            575,
+            174
+          ]
+        ],
+        "action": {
+          "type": "panel",
+          "target": "goals"
+        }
+      },
+      {
+        "id": "council-table",
+        "label": "Abrir histórico de atividades",
+        "polygon": [
+          [
+            865,
+            445
+          ],
+          [
+            965,
+            405
+          ],
+          [
+            1125,
+            497
+          ],
+          [
+            1125,
+            555
+          ],
+          [
+            1045,
+            585
+          ],
+          [
+            880,
+            490
+          ]
+        ],
+        "action": {
+          "type": "panel",
+          "target": "activity"
+        }
+      },
+      {
+        "id": "legal-monitor",
+        "label": "Conhecer Vera, do Jurídico",
+        "polygon": [
+          [
+            1395,
+            552
+          ],
+          [
+            1480,
+            581
+          ],
+          [
+            1480,
+            667
+          ],
+          [
+            1395,
+            632
+          ]
+        ],
+        "action": {
+          "type": "agent",
+          "target": "A18"
+        }
+      }
+    ],
+    "seats": [
+      {
+        "id": "planning-left",
+        "label": "Estação de planejamento 1",
+        "position": {
+          "x": 650,
+          "y": 245
+        },
+        "approach": {
+          "x": 636,
+          "y": 300
+        },
+        "facing": 1,
+        "occluders": [
+          [
+            [
+              604,
+              149
+            ],
+            [
+              630,
+              145
+            ],
+            [
+              641,
+              185
+            ],
+            [
+              635,
+              209
+            ],
+            [
+              607,
+              203
+            ],
+            [
+              596,
+              168
+            ]
+          ]
+        ],
+        "anchor": {
+          "x": 641,
+          "y": 205
+        },
+        "kind": "workstation"
+      },
+      {
+        "id": "planning-right",
+        "label": "Estação de planejamento 2",
+        "position": {
+          "x": 812,
+          "y": 313
+        },
+        "approach": {
+          "x": 780,
+          "y": 372
+        },
+        "facing": 1,
+        "occluders": [
+          [
+            [
+              768,
+              212
+            ],
+            [
+              789,
+              207
+            ],
+            [
+              805,
+              253
+            ],
+            [
+              799,
+              272
+            ],
+            [
+              771,
+              263
+            ],
+            [
+              760,
+              226
+            ]
+          ]
+        ],
+        "anchor": {
+          "x": 804,
+          "y": 272
+        },
+        "kind": "workstation"
+      },
+      {
+        "id": "research-desk",
+        "label": "Estação de pesquisa",
+        "position": {
+          "x": 1343,
+          "y": 399
+        },
+        "approach": {
+          "x": 1344,
+          "y": 432
+        },
+        "facing": 1,
+        "occluders": [
+          [
+            [
+              1305,
+              283
+            ],
+            [
+              1326,
+              279
+            ],
+            [
+              1343,
+              325
+            ],
+            [
+              1335,
+              352
+            ],
+            [
+              1308,
+              342
+            ],
+            [
+              1297,
+              300
+            ]
+          ]
+        ],
+        "anchor": {
+          "x": 1341,
+          "y": 350
+        },
+        "kind": "workstation"
+      },
+      {
+        "id": "legal-desk",
+        "label": "Estação do Jurídico",
+        "position": {
+          "x": 1384,
+          "y": 769
+        },
+        "approach": {
+          "x": 1368,
+          "y": 804
+        },
+        "facing": 1,
+        "occluders": [
+          [
+            [
+              1330,
+              645
+            ],
+            [
+              1359,
+              647
+            ],
+            [
+              1380,
+              679
+            ],
+            [
+              1372,
+              707
+            ],
+            [
+              1341,
+              694
+            ],
+            [
+              1323,
+              665
+            ]
+          ]
+        ],
+        "anchor": {
+          "x": 1381,
+          "y": 710
+        },
+        "kind": "workstation"
+      },
+      {
+        "id": "council-west",
+        "label": "Cadeira oeste do conselho",
+        "kind": "meeting",
+        "position": {
+          "x": 848,
+          "y": 512
+        },
+        "approach": {
+          "x": 780,
+          "y": 516
+        },
+        "anchor": {
+          "x": 859,
+          "y": 474
+        },
+        "pose": "meeting-front",
+        "facing": 1,
+        "occluders": []
+      },
+      {
+        "id": "council-north",
+        "label": "Cadeira norte do conselho",
+        "kind": "meeting",
+        "position": {
+          "x": 1032,
+          "y": 468
+        },
+        "approach": {
+          "x": 1032,
+          "y": 396
+        },
+        "anchor": {
+          "x": 1033,
+          "y": 446
+        },
+        "pose": "meeting-front",
+        "facing": -1,
+        "occluders": []
+      },
+      {
+        "id": "council-east",
+        "label": "Cadeira leste do conselho",
+        "kind": "meeting",
+        "position": {
+          "x": 1128,
+          "y": 528
+        },
+        "approach": {
+          "x": 1188,
+          "y": 516
+        },
+        "anchor": {
+          "x": 1110,
+          "y": 499
+        },
+        "pose": "meeting-front",
+        "facing": -1,
+        "occluders": []
+      },
+      {
+        "id": "council-southwest",
+        "label": "Cadeira sudoeste do conselho",
+        "kind": "meeting",
+        "position": {
+          "x": 876,
+          "y": 612
+        },
+        "approach": {
+          "x": 804,
+          "y": 612
+        },
+        "anchor": {
+          "x": 883,
+          "y": 555
+        },
+        "pose": "meeting-rear",
+        "facing": 1,
+        "occluders": [
+          [
+            [
+              851,
+              487
+            ],
+            [
+              874,
+              480
+            ],
+            [
+              900,
+              500
+            ],
+            [
+              902,
+              548
+            ],
+            [
+              881,
+              561
+            ],
+            [
+              854,
+              542
+            ]
+          ]
+        ]
+      },
+      {
+        "id": "council-southeast",
+        "label": "Cadeira sudeste do conselho",
+        "kind": "meeting",
+        "position": {
+          "x": 1132,
+          "y": 660
+        },
+        "approach": {
+          "x": 1164,
+          "y": 684
+        },
+        "anchor": {
+          "x": 1120,
+          "y": 604
+        },
+        "pose": "meeting-rear",
+        "facing": -1,
+        "occluders": [
+          [
+            [
+              1116,
+              546
+            ],
+            [
+              1160,
+              529
+            ],
+            [
+              1170,
+              538
+            ],
+            [
+              1158,
+              594
+            ],
+            [
+              1129,
+              615
+            ],
+            [
+              1101,
+              602
+            ],
+            [
+              1103,
+              570
+            ]
+          ]
+        ]
+      }
+    ],
+    "financeScreen": {
+      "x": 201,
+      "y": 140,
+      "width": 174,
+      "height": 96,
+      "shearY": -0.378
+    },
+    "meetingTable": {
+      "polygon": [
+        [
+          865,
+          445
+        ],
+        [
+          880,
+          429
+        ],
+        [
+          937,
+          407
+        ],
+        [
+          964,
+          414
+        ],
+        [
+          1100,
+          486
+        ],
+        [
+          1122,
+          509
+        ],
+        [
+          1123,
+          550
+        ],
+        [
+          1098,
+          570
+        ],
+        [
+          1072,
+          578
+        ],
+        [
+          1068,
+          625
+        ],
+        [
+          1043,
+          632
+        ],
+        [
+          1016,
+          615
+        ],
+        [
+          1015,
+          570
+        ],
+        [
+          879,
+          492
+        ],
+        [
+          865,
+          477
+        ]
+      ],
+      "focus": {
+        "x": 995,
+        "y": 520
+      }
+    }
+  },
+  "atlases": [
+    {
+      "id": "a",
+      "url": "/static/office/agents-a.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "id": "b",
+      "url": "/static/office/agents-b.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "id": "c",
+      "url": "/static/office/agents-c.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "id": "seated",
+      "url": "/static/office/agents-seated-rear.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "id": "meeting-front",
+      "url": "/static/office/agents-meeting-front.webp",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "id": "meeting-rear",
+      "url": "/static/office/agents-meeting-rear.webp",
+      "width": 1536,
+      "height": 1024
+    }
+  ],
+  "agents": [
+    {
+      "id": "A01",
+      "name": "Atlas",
+      "description": "Intermediador; interpreta pedidos, escolhe especialistas, gerencia workflow, encerra recomendação.",
+      "role": "Coordenação",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 95,
+          "y": 25,
+          "w": 101,
+          "h": 236
+        },
+        {
+          "x": 335,
+          "y": 25,
+          "w": 121,
+          "h": 235
+        },
+        {
+          "x": 576,
+          "y": 25,
+          "w": 126,
+          "h": 235
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 828,
+        "y": 708
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 71,
+          "y": 13,
+          "w": 158,
+          "h": 237
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 49,
+              "y": 6,
+              "w": 187,
+              "h": 257
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 52,
+              "y": 7,
+              "w": 186,
+              "h": 241
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A02",
+      "name": "Mnema",
+      "description": "História e memória; extrai candidatos, corrige conflitos, contextualiza.",
+      "role": "Memória e contexto",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 855,
+          "y": 28,
+          "w": 90,
+          "h": 234
+        },
+        {
+          "x": 1082,
+          "y": 28,
+          "w": 125,
+          "h": 234
+        },
+        {
+          "x": 1362,
+          "y": 28,
+          "w": 97,
+          "h": 233
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 324,
+        "y": 420
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 351,
+          "y": 14,
+          "w": 150,
+          "h": 230
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 325,
+              "y": 5,
+              "w": 167,
+              "h": 257
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 322,
+              "y": 5,
+              "w": 191,
+              "h": 242
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A03",
+      "name": "Nina",
+      "description": "Qualidade e reconciliação financeira, origem/datas e posições.",
+      "role": "Qualidade dos dados",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 104,
+          "y": 276,
+          "w": 99,
+          "h": 233
+        },
+        {
+          "x": 339,
+          "y": 276,
+          "w": 106,
+          "h": 234
+        },
+        {
+          "x": 579,
+          "y": 276,
+          "w": 112,
+          "h": 234
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 588,
+        "y": 372
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 595,
+          "y": 13,
+          "w": 149,
+          "h": 231
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 574,
+              "y": 6,
+              "w": 171,
+              "h": 256
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 584,
+              "y": 7,
+              "w": 186,
+              "h": 240
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A04",
+      "name": "Vigia",
+      "description": "Segurança, classificação, permissões e auditoria; policy engine em código.",
+      "role": "Segurança",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 834,
+          "y": 275,
+          "w": 122,
+          "h": 234
+        },
+        {
+          "x": 1088,
+          "y": 275,
+          "w": 134,
+          "h": 236
+        },
+        {
+          "x": 1346,
+          "y": 275,
+          "w": 130,
+          "h": 236
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 1164,
+        "y": 924
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 834,
+          "y": 13,
+          "w": 168,
+          "h": 233
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 819,
+              "y": 7,
+              "w": 194,
+              "h": 256
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 837,
+              "y": 7,
+              "w": 202,
+              "h": 241
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A05",
+      "name": "Cora",
+      "description": "Gastos, categorias, assinaturas, orçamento e relatório mensal.",
+      "role": "Gastos e orçamento",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 104,
+          "y": 520,
+          "w": 90,
+          "h": 238
+        },
+        {
+          "x": 341,
+          "y": 520,
+          "w": 112,
+          "h": 238
+        },
+        {
+          "x": 589,
+          "y": 520,
+          "w": 111,
+          "h": 237
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 468,
+        "y": 516
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1086,
+          "y": 13,
+          "w": 178,
+          "h": 235
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1081,
+              "y": 5,
+              "w": 182,
+              "h": 257
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1097,
+              "y": 6,
+              "w": 200,
+              "h": 241
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A06",
+      "name": "Maia",
+      "description": "Dono do CRUD/versionamento de metas e seu estado.",
+      "role": "Metas",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 847,
+          "y": 521,
+          "w": 102,
+          "h": 239
+        },
+        {
+          "x": 1097,
+          "y": 521,
+          "w": 119,
+          "h": 237
+        },
+        {
+          "x": 1364,
+          "y": 521,
+          "w": 111,
+          "h": 237
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 732,
+        "y": 348
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1334,
+          "y": 11,
+          "w": 188,
+          "h": 232
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1341,
+              "y": 6,
+              "w": 182,
+              "h": 256
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1339,
+              "y": 6,
+              "w": 197,
+              "h": 241
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A07",
+      "name": "Élio",
+      "description": "Balanceamento entre metas, cenários e alocação por período.",
+      "role": "Planejamento",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 97,
+          "y": 769,
+          "w": 97,
+          "h": 241
+        },
+        {
+          "x": 342,
+          "y": 769,
+          "w": 118,
+          "h": 241
+        },
+        {
+          "x": 588,
+          "y": 768,
+          "w": 116,
+          "h": 241
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 828,
+        "y": 348
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 70,
+          "y": 263,
+          "w": 158,
+          "h": 234
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 46,
+              "y": 263,
+              "w": 171,
+              "h": 254
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 49,
+              "y": 254,
+              "w": 188,
+              "h": 248
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A08",
+      "name": "Davi",
+      "description": "Tesouraria, liquidez, passivos, vencimentos e envelope investível.",
+      "role": "Caixa e liquidez",
+      "atlas": "a",
+      "frames": [
+        {
+          "x": 843,
+          "y": 769,
+          "w": 107,
+          "h": 241
+        },
+        {
+          "x": 1093,
+          "y": 767,
+          "w": 129,
+          "h": 243
+        },
+        {
+          "x": 1354,
+          "y": 767,
+          "w": 119,
+          "h": 243
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 660,
+        "y": 444
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 331,
+          "y": 260,
+          "w": 169,
+          "h": 239
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 304,
+              "y": 263,
+              "w": 186,
+              "h": 254
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 321,
+              "y": 253,
+              "w": 193,
+              "h": 254
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A09",
+      "name": "Helena",
+      "description": "Imóveis, participações, bens privados, avaliações e passivos vinculados.",
+      "role": "Patrimônio",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 80,
+          "y": 17,
+          "w": 98,
+          "h": 237
+        },
+        {
+          "x": 316,
+          "y": 20,
+          "w": 127,
+          "h": 233
+        },
+        {
+          "x": 569,
+          "y": 22,
+          "w": 129,
+          "h": 231
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 372,
+        "y": 636
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 588,
+          "y": 259,
+          "w": 164,
+          "h": 241
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 570,
+              "y": 263,
+              "w": 172,
+              "h": 255
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 579,
+              "y": 257,
+              "w": 194,
+              "h": 250
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A10",
+      "name": "Teseu",
+      "description": "Biblioteca, aplicabilidade, versões e revisão de estratégias.",
+      "role": "Estratégias",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 847,
+          "y": 17,
+          "w": 107,
+          "h": 238
+        },
+        {
+          "x": 1091,
+          "y": 17,
+          "w": 138,
+          "h": 238
+        },
+        {
+          "x": 1353,
+          "y": 17,
+          "w": 128,
+          "h": 238
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 444,
+        "y": 396
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 832,
+          "y": 257,
+          "w": 176,
+          "h": 245
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 816,
+              "y": 263,
+              "w": 186,
+              "h": 257
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 840,
+              "y": 253,
+              "w": 189,
+              "h": 254
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A11",
+      "name": "Bento",
+      "description": "Mandato de longo prazo; alocação, teses, objetivos e diversificação.",
+      "role": "Longo prazo",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 54,
+          "y": 266,
+          "w": 148,
+          "h": 244
+        },
+        {
+          "x": 305,
+          "y": 271,
+          "w": 160,
+          "h": 239
+        },
+        {
+          "x": 556,
+          "y": 269,
+          "w": 167,
+          "h": 241
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 876,
+        "y": 828
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1089,
+          "y": 254,
+          "w": 186,
+          "h": 249
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1075,
+              "y": 262,
+              "w": 197,
+              "h": 258
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1095,
+              "y": 255,
+              "w": 201,
+              "h": 252
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A12",
+      "name": "Íris",
+      "description": "Mandato tático (dias/semanas); tese e condições de invalidação.",
+      "role": "Perspectiva tática",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 854,
+          "y": 274,
+          "w": 100,
+          "h": 236
+        },
+        {
+          "x": 1095,
+          "y": 277,
+          "w": 135,
+          "h": 233
+        },
+        {
+          "x": 1357,
+          "y": 276,
+          "w": 130,
+          "h": 234
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 1092,
+        "y": 828
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1352,
+          "y": 261,
+          "w": 169,
+          "h": 241
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1349,
+              "y": 263,
+              "w": 171,
+              "h": 253
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1351,
+              "y": 257,
+              "w": 185,
+              "h": 250
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A13",
+      "name": "Lira",
+      "description": "Renda fixa, duration, indexadores, curva real/nominal e crédito.",
+      "role": "Renda fixa",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 75,
+          "y": 522,
+          "w": 110,
+          "h": 239
+        },
+        {
+          "x": 316,
+          "y": 524,
+          "w": 139,
+          "h": 237
+        },
+        {
+          "x": 574,
+          "y": 522,
+          "w": 141,
+          "h": 238
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 540,
+        "y": 612
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 44,
+          "y": 505,
+          "w": 198,
+          "h": 252
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 24,
+              "y": 512,
+              "w": 206,
+              "h": 261
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 30,
+              "y": 496,
+              "w": 216,
+              "h": 262
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A14",
+      "name": "Orion",
+      "description": "Cenários macro, inflação, atividade, política monetária e juros.",
+      "role": "Macroeconomia",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 840,
+          "y": 520,
+          "w": 120,
+          "h": 240
+        },
+        {
+          "x": 1096,
+          "y": 518,
+          "w": 136,
+          "h": 242
+        },
+        {
+          "x": 1353,
+          "y": 518,
+          "w": 140,
+          "h": 241
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 948,
+        "y": 900
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 328,
+          "y": 510,
+          "w": 184,
+          "h": 249
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 302,
+              "y": 515,
+              "w": 195,
+              "h": 259
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 315,
+              "y": 505,
+              "w": 202,
+              "h": 254
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A15",
+      "name": "Sol",
+      "description": "Investimentos globais e exposição cambial.",
+      "role": "Investimentos globais",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 77,
+          "y": 771,
+          "w": 101,
+          "h": 240
+        },
+        {
+          "x": 319,
+          "y": 773,
+          "w": 132,
+          "h": 235
+        },
+        {
+          "x": 571,
+          "y": 772,
+          "w": 134,
+          "h": 236
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 1068,
+        "y": 972
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 580,
+          "y": 511,
+          "w": 173,
+          "h": 244
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 562,
+              "y": 518,
+              "w": 180,
+              "h": 255
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 575,
+              "y": 507,
+              "w": 197,
+              "h": 251
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A16",
+      "name": "Kira",
+      "description": "Cripto, riscos de redes, custódia, liquidez e mercados.",
+      "role": "Criptoativos",
+      "atlas": "b",
+      "frames": [
+        {
+          "x": 851,
+          "y": 778,
+          "w": 98,
+          "h": 232
+        },
+        {
+          "x": 1095,
+          "y": 776,
+          "w": 130,
+          "h": 234
+        },
+        {
+          "x": 1348,
+          "y": 777,
+          "w": 141,
+          "h": 233
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 1260,
+        "y": 924
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 832,
+          "y": 512,
+          "w": 184,
+          "h": 242
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 821,
+              "y": 519,
+              "w": 182,
+              "h": 252
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 837,
+              "y": 509,
+              "w": 199,
+              "h": 245
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A17",
+      "name": "Dante",
+      "description": "Risco consolidado e por mandato; estresse, perda e concentração.",
+      "role": "Risco",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 96,
+          "y": 20,
+          "w": 102,
+          "h": 236
+        },
+        {
+          "x": 341,
+          "y": 21,
+          "w": 132,
+          "h": 235
+        },
+        {
+          "x": 587,
+          "y": 22,
+          "w": 129,
+          "h": 234
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 756,
+        "y": 804
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1091,
+          "y": 511,
+          "w": 185,
+          "h": 246
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1076,
+              "y": 520,
+              "w": 188,
+              "h": 253
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1096,
+              "y": 511,
+              "w": 200,
+              "h": 244
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A18",
+      "name": "Vera",
+      "description": "Pesquisa jurídica/tributária com vigência e fontes oficiais.",
+      "role": "Direito e tributação",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 856,
+          "y": 25,
+          "w": 93,
+          "h": 231
+        },
+        {
+          "x": 1096,
+          "y": 28,
+          "w": 114,
+          "h": 228
+        },
+        {
+          "x": 1343,
+          "y": 25,
+          "w": 109,
+          "h": 231
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 1188,
+        "y": 780
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1364,
+          "y": 514,
+          "w": 160,
+          "h": 240
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1344,
+              "y": 518,
+              "w": 175,
+              "h": 257
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1354,
+              "y": 510,
+              "w": 182,
+              "h": 248
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A19",
+      "name": "Lia",
+      "description": "Finanças comportamentais, vieses e decisões sob emoção.",
+      "role": "Comportamento",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 85,
+          "y": 270,
+          "w": 107,
+          "h": 240
+        },
+        {
+          "x": 331,
+          "y": 270,
+          "w": 135,
+          "h": 240
+        },
+        {
+          "x": 583,
+          "y": 271,
+          "w": 129,
+          "h": 239
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 444,
+        "y": 708
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 37,
+          "y": 756,
+          "w": 203,
+          "h": 248
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 25,
+              "y": 771,
+              "w": 196,
+              "h": 252
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 31,
+              "y": 752,
+              "w": 213,
+              "h": 259
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A20",
+      "name": "Sofia",
+      "description": "Filosofia econômica, valores, liberdade, tempo e bem-estar.",
+      "role": "Valores e escolhas",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 851,
+          "y": 269,
+          "w": 99,
+          "h": 241
+        },
+        {
+          "x": 1083,
+          "y": 269,
+          "w": 129,
+          "h": 243
+        },
+        {
+          "x": 1331,
+          "y": 269,
+          "w": 127,
+          "h": 243
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 252,
+        "y": 516
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 313,
+          "y": 762,
+          "w": 189,
+          "h": 244
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 306,
+              "y": 771,
+              "w": 171,
+              "h": 252
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 314,
+              "y": 758,
+              "w": 197,
+              "h": 253
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A21",
+      "name": "Caio",
+      "description": "Crítica independente, falsificabilidade e contraditório.",
+      "role": "Contraponto",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 93,
+          "y": 521,
+          "w": 99,
+          "h": 246
+        },
+        {
+          "x": 329,
+          "y": 522,
+          "w": 135,
+          "h": 245
+        },
+        {
+          "x": 578,
+          "y": 522,
+          "w": 133,
+          "h": 245
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 684,
+        "y": 660
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 574,
+          "y": 755,
+          "w": 184,
+          "h": 253
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 560,
+              "y": 771,
+              "w": 183,
+              "h": 252
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 574,
+              "y": 753,
+              "w": 196,
+              "h": 258
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A22",
+      "name": "Prisma",
+      "description": "Relatórios, gráficos, templates e versões seguras de canal.",
+      "role": "Relatórios",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 854,
+          "y": 527,
+          "w": 94,
+          "h": 241
+        },
+        {
+          "x": 1090,
+          "y": 528,
+          "w": 122,
+          "h": 240
+        },
+        {
+          "x": 1342,
+          "y": 528,
+          "w": 116,
+          "h": 239
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 564,
+        "y": 468
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 820,
+          "y": 762,
+          "w": 187,
+          "h": 244
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 817,
+              "y": 771,
+              "w": 172,
+              "h": 252
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 829,
+              "y": 758,
+              "w": 198,
+              "h": 253
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    },
+    {
+      "id": "A23",
+      "name": "Otto",
+      "description": "Evals e aprendizado verificável; custo/qualidade/resultados.",
+      "role": "Avaliação",
+      "atlas": "c",
+      "frames": [
+        {
+          "x": 88,
+          "y": 778,
+          "w": 103,
+          "h": 237
+        },
+        {
+          "x": 332,
+          "y": 779,
+          "w": 131,
+          "h": 235
+        },
+        {
+          "x": 585,
+          "y": 780,
+          "w": 127,
+          "h": 234
+        }
+      ],
+      "height": 120,
+      "home": {
+        "x": 660,
+        "y": 540
+      },
+      "seated": {
+        "atlas": "seated",
+        "frame": {
+          "x": 1091,
+          "y": 764,
+          "w": 182,
+          "h": 244
+        },
+        "height": 110,
+        "anchor": {
+          "x": 0.38,
+          "y": 0.74
+        },
+        "variants": {
+          "meeting-front": {
+            "atlas": "meeting-front",
+            "frame": {
+              "x": 1088,
+              "y": 776,
+              "w": 184,
+              "h": 248
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.35,
+              "y": 0.7
+            },
+            "upperBody": 0.64
+          },
+          "meeting-rear": {
+            "atlas": "meeting-rear",
+            "frame": {
+              "x": 1101,
+              "y": 760,
+              "w": 196,
+              "h": 251
+            },
+            "height": 110,
+            "anchor": {
+              "x": 0.38,
+              "y": 0.78
+            },
+            "upperBody": 0.68
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{{define "autonomy-panel"}}
+<section id="autonomy-panel" class="autonomy-panel" aria-labelledby="autonomy-title">
+  <h2 id="autonomy-title">Acompanhamento automático</h2>
+  <p id="autonomy-state" class="autonomy-state" role="status">Consultando supervisor…</p>
+  <p id="autonomy-heartbeat" class="autonomy-note">O estado será consultado no servidor.</p>
+  <dl class="autonomy-schedule"><div><dt>Próxima coleta</dt><dd id="autonomy-next-collect">Aguardando consulta</dd></div><div><dt>Próxima rodada</dt><dd id="autonomy-next-run">Aguardando consulta</dd></div></dl>
+  <p id="autonomy-budget" class="autonomy-note"></p>
+  <div class="autonomy-actions"><button type="button" id="autonomy-pause" class="button-quiet" disabled>Pausar</button><button type="button" id="autonomy-run" class="button-quiet" disabled>Iniciar rodada</button></div>
+  <p id="autonomy-feedback" class="autonomy-note" role="status"></p>
+  <a class="investment-source-link" href="/reports">Abrir relatórios e conversa dos agentes</a>
+  <p class="autonomy-note">Pesquisa na VPS, mesmo com esta aba fechada. As estratégias são estudos para sua avaliação. Nenhuma operação financeira é executada.</p>
+</section>
+{{end}}
+{{define "autonomy-history"}}
+<section class="autonomy-history" aria-labelledby="autonomy-history-title">
+  <h3 id="autonomy-history-title">Rotinas automáticas</h3><p><a class="investment-source-link" href="/reports">Ler relatórios completos e histórico dos pareceres</a></p>
+  <p class="drawer-intro">Notícias públicas a cada 15 minutos e rodadas de análise a cada 6 horas. Horários de Brasília.</p>
+  <h4>Última rodada · etapas</h4><ol id="autonomy-tasks" class="autonomy-tasks"></ol>
+  <h4>Rodadas registradas</h4><ol id="autonomy-runs" class="autonomy-list"><li>Consultando rodadas…</li></ol>
+  <section id="autonomy-detail" class="autonomy-detail" aria-label="Detalhes da rodada selecionada" hidden></section>
+  <h4>Estratégias em acompanhamento</h4><ul id="autonomy-strategies" class="autonomy-list"><li>Consultando estratégias…</li></ul>
+  <details><summary>Fontes públicas e disponibilidade</summary><ul id="autonomy-sources" class="autonomy-list"></ul></details>
+</section>
+{{end}}

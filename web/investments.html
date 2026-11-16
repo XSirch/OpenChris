@@ -1,0 +1,29 @@
+{{define "investment-panel"}}
+{{with .Live.Investments}}
+<section id="investment-panel" class="investment-panel" data-state="{{.State}}" aria-labelledby="investment-title">
+  <h2 id="investment-title">Investimentos via Pluggy</h2>
+  <p id="investment-state" class="investment-state" role="status">{{investmentState .State}}</p>
+  <div id="investment-totals" class="investment-totals">{{range .Totals}}
+    <dl><dt>Posições ativas · {{.Currency}}{{if ne .Count .ValuedCount}} · valor parcial{{end}}</dt><dd>{{.BalanceText}}</dd></dl>
+  {{else}}<p class="investment-note">{{investmentEmpty .State}}</p>{{end}}</div>
+  <p id="investment-coverage" class="investment-note">{{investmentCoverage .}}</p>
+  <p id="investment-stamp" class="investment-note">{{if .LastSyncedAt}}Última coleta: {{investmentStamp .LastSyncedAt}}. Fonte mais antiga: {{investmentStamp .OldestSyncedAt}}.{{else}}A fonte ainda não tem uma coleta disponível.{{end}}</p>
+  <p id="investment-update-state" class="investment-note">Consultado ao abrir o painel.</p>
+  <details id="investment-composition" class="investment-composition">
+    <summary>Ver composição</summary>
+    <ol id="investment-positions" class="investment-positions">{{range .Positions}}
+      <li><div class="investment-position-heading"><h3>{{.Name}}</h3><span>{{investmentStatus .Status}}</span></div>
+        <p class="investment-position-value">{{.BalanceText}}</p>
+        <p class="investment-note">{{investmentType .Type}} · {{.Currency}}</p>
+        {{if .Issuer}}<p class="investment-note">Emissor: {{.Issuer}}</p>{{end}}
+        {{if .Maturity}}<p class="investment-note">Vencimento informado: {{.Maturity}}</p>{{end}}
+        <p class="investment-note">{{if .SourceUpdatedAt}}Atualização na fonte: {{investmentStamp .SourceUpdatedAt}}{{else}}Coletado em: {{investmentStamp .ObservedAt}}{{end}}</p>
+      </li>
+    {{else}}<li class="investment-note">Nenhuma posição disponível para detalhar.</li>{{end}}</ol>
+    <p id="investment-limit" class="investment-note">{{if .Omitted}}{{.Omitted}} posições não exibidas. Os totais consideram todas as posições ativas autorizadas.{{end}}</p>
+  </details>
+  <button class="investment-source-link" type="button" data-open-panel="connections">Ver fontes e sincronizar</button>
+  <p class="investment-note">Importados para consulta e análise. Separados do patrimônio manual para evitar dupla contagem. Saldo investido não indica liquidez imediata.</p>
+</section>
+{{end}}
+{{end}}

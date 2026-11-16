@@ -1,0 +1,357 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/conselho/schemas/recommendation.schema.json",
+  "title": "recommendation",
+  "description": "Parecer final pessoal; esta saída NUNCA autoriza execução financeira.",
+  "type": "object",
+  "properties": {
+    "recommendation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "const": "council.recommendation.v1"
+    },
+    "case_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published",
+        "awaiting_evidence",
+        "blocked",
+        "stale"
+      ]
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "recommend",
+        "recommend_with_conditions",
+        "no_action",
+        "await_data"
+      ]
+    },
+    "mandate": {
+      "type": "string",
+      "enum": [
+        "long_term",
+        "tactical",
+        "cross_mandate",
+        "not_applicable"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context_manifest_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "data_as_of": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "suggested_allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "instrument_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "suggested_amount": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^-?\\d+(\\.\\d+)?$"
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3,5}$"
+              }
+            },
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "additionalProperties": false,
+            "description": "Use decimal string, never binary float, to serialize money."
+          },
+          "suggested_quantity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d+(\\.\\d+)?$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "horizon": {
+            "type": "string",
+            "minLength": 1
+          },
+          "price_reference_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "instrument_id",
+          "suggested_amount",
+          "suggested_quantity",
+          "purpose",
+          "horizon",
+          "price_reference_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "alternatives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dissent": {
+      "type": "object",
+      "properties": {
+        "raised_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "objection": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resolved": {
+          "type": "boolean"
+        },
+        "resolution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "raised_by",
+        "objection",
+        "resolved",
+        "resolution"
+      ],
+      "additionalProperties": false
+    },
+    "supporting_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uri": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "user",
+              "financial",
+              "official_law",
+              "market",
+              "agent",
+              "document"
+            ]
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_type",
+          "observed_at"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "checks": {
+      "type": "object",
+      "properties": {
+        "financial_rules": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "unknown"
+          ]
+        },
+        "privacy_rules": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "unknown"
+          ]
+        },
+        "legal_review": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "not_applicable",
+            "unknown"
+          ]
+        },
+        "source_freshness": {
+          "type": "string",
+          "enum": [
+            "passed",
+            "failed",
+            "unknown"
+          ]
+        }
+      },
+      "required": [
+        "financial_rules",
+        "privacy_rules",
+        "legal_review",
+        "source_freshness"
+      ],
+      "additionalProperties": false
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "review_after": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "recommendation_id",
+    "schema_version",
+    "case_id",
+    "user_id",
+    "status",
+    "action_type",
+    "mandate",
+    "title",
+    "summary",
+    "context_manifest_id",
+    "data_as_of",
+    "suggested_allocations",
+    "alternatives",
+    "risks",
+    "conditions",
+    "assumptions",
+    "dissent",
+    "supporting_evidence",
+    "checks",
+    "created_at",
+    "review_after"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action_type": {
+            "const": "await_data"
+          }
+        },
+        "required": [
+          "action_type"
+        ]
+      },
+      "then": {
+        "properties": {
+          "suggested_allocations": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

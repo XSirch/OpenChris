@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/conselho/schemas/monthly-report.schema.json",
+  "title": "monthly-report",
+  "description": "Relatório mensal: agregado para Telegram, detalhamento apenas dashboard.",
+  "type": "object",
+  "properties": {
+    "report_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "const": "monthly.report.v1"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "period": {
+      "type": "string",
+      "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "partial",
+        "awaiting_sources"
+      ]
+    },
+    "source_snapshot_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "total_expenses": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "string",
+          "pattern": "^-?\\d+(\\.\\d+)?$"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3,5}$"
+        }
+      },
+      "required": [
+        "amount",
+        "currency"
+      ],
+      "additionalProperties": false,
+      "description": "Use decimal string, never binary float, to serialize money."
+    },
+    "total_income": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "pattern": "^-?\\d+(\\.\\d+)?$"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3,5}$"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false,
+          "description": "Use decimal string, never binary float, to serialize money."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "category_totals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "total": {
+            "type": "object",
+            "properties": {
+              "amount": {
+                "type": "string",
+                "pattern": "^-?\\d+(\\.\\d+)?$"
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3,5}$"
+              }
+            },
+            "required": [
+              "amount",
+              "currency"
+            ],
+            "additionalProperties": false,
+            "description": "Use decimal string, never binary float, to serialize money."
+          }
+        },
+        "required": [
+          "category",
+          "total"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "trend_percent": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "quality_issues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommendation_type": {
+      "type": "string",
+      "enum": [
+        "action",
+        "no_action",
+        "await_data"
+      ]
+    },
+    "recommendation_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "detail_artifact_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "telegram_summary": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "report_id",
+    "schema_version",
+    "user_id",
+    "period",
+    "status",
+    "source_snapshot_ids",
+    "total_expenses",
+    "total_income",
+    "category_totals",
+    "trend_percent",
+    "quality_issues",
+    "recommendation_type",
+    "recommendation_summary",
+    "detail_artifact_id",
+    "telegram_summary",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

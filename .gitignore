@@ -1,0 +1,17 @@
+.tools/
+.runtime/
+.env
+.env.*
+!.env.example
+!.env.vps.example
+__pycache__/
+*.pyc
+.venv/
+*.exe
+*.log
+.superpowers/
+evidence/
+bench/.tmp/
+*.sql.gz
+*.dump
+account.enc

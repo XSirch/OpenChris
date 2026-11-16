@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Relatórios · CONSELHO</title>
+<link rel="stylesheet" href="/static/base.css">
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/reports.css">
+<link rel="stylesheet" href="/static/personal-finance.css">
+<script src="/static/personal-finance.js" defer></script>
+</head>
+<body class="pixel-dashboard reports-page">
+<a class="skip-link" href="#reports-main">Ir para os relatórios</a>{{template "navigation" .}}<div class="dashboard-shell">
+<header class="app-topbar">
+<a class="wordmark" href="/dashboard">CONSELHO</a>
+<a href="/dashboard">Voltar ao escritório</a>
+</header>
+<main id="reports-main" class="reports-main">
+<h1>Relatórios do conselho</h1>
+<p class="reports-intro">Consulte as rodadas e os pareceres que ficaram registrados.</p>
+<p class="report-progress"><a href="#archive-title">Escolher outra análise no histórico</a></p>
+{{if .RunningURL}}<p class="report-progress">Há uma análise em andamento. <a href="{{.RunningURL}}">Acompanhar etapas</a></p>{{end}}
+{{if .LatestCompleteURL}}<p class="report-progress"><a href="{{.LatestCompleteURL}}">Abrir a última análise concluída</a></p>{{end}}
+<div class="reports-layout">
+<aside class="reports-archive" aria-labelledby="archive-title">
+<details class="report-archive-disclosure">
+<summary id="archive-title">Histórico de análises</summary>
+<a href="/reports">Mais recentes</a>
+<ol>{{range .Archive.Runs}}<li>
+<a href="/reports?run={{.ID}}{{if $.Cursor}}&amp;cursor={{$.Cursor}}{{end}}#report-reading"{{if $.Detail}}{{if eq .ID $.Detail.Run.ID}} aria-current="page"{{end}}{{end}}>
+<time>{{stamp .CreatedAt}}</time>
+<strong>{{reportTopic .Topic}}</strong>
+<span>{{reportState .Status}}</span>
+</a>
+</li>{{else}}<li>Nenhuma rodada neste arquivo.</li>{{end}}</ol>{{if .Archive.Next}}<a class="report-next" href="/reports?cursor={{.Archive.Next}}#archive-title">Rodadas anteriores</a>{{end}}</details></aside>
+<article id="report-reading" class="report-reading" tabindex="-1">{{if .Detail}}<header>
+<h2>{{reportTopic .Detail.Run.Topic}}</h2>
+<p>Rodada de {{stamp .Detail.Run.CreatedAt}} · {{reportState .Detail.Run.Status}}</p>
+{{if .SummaryText}}<section class="report-summary" aria-labelledby="report-summary-title"><h3 id="report-summary-title">Resumo e próximos passos</h3>{{if .SummaryStatus}}<p>{{.SummaryStatus}}</p>{{end}}<div class="report-prose">{{.SummaryText}}</div></section>{{end}}
+<details><summary>Identificação da rodada</summary><p class="report-id">{{.Detail.Run.ID}}</p></details>
+<a href="/dashboard?replay={{.Detail.Run.ID}}">Ver no escritório</a>
+<p>Histórico registrado. A leitura desta página não executa uma nova rodada.</p>{{if .Detail.Run.ErrorCode}}<p>Limitação da rodada: {{reportError .Detail.Run.ErrorCode}}</p>{{end}}</header>
+<section class="personal-finance-panel report-pending" data-personal-finance aria-labelledby="report-pending-title"><h3 id="report-pending-title">O que falta para analisar suas finanças</h3><p data-personal-status role="status">Consultando as pendências atuais…</p><details class="report-pending-details"><summary>Ver o que precisa ser preenchido ou revisado</summary><ul data-personal-issues class="personal-issues"></ul></details><a href="/finance/profile">Revisar meus dados e objetivos</a></section>
+<nav class="report-index" aria-label="Pareceres desta rodada">{{range .Tasks}}<a href="#task-{{.Stage}}">{{.Name}}</a>{{end}}<a href="#report-strategies">Estratégias</a>
+<a href="#report-sources">Fontes</a>
+</nav>
+{{range .Tasks}}<section id="task-{{.Stage}}" class="report-task" aria-labelledby="task-title-{{.Stage}}">
+<h2 id="task-title-{{.Stage}}">{{.Name}} · {{.Role}}</h2>
+<p class="report-state">{{reportState .Status}}{{if .CompletedAt}} · Registrado em {{investmentStamp .CompletedAt}}{{end}}</p>{{if .Error}}<p>Limitação: {{reportError .Error}}</p>{{end}}{{if .Text}}<div class="report-prose">{{.Text}}</div>{{else}}<p>Não há texto de parecer registrado para esta etapa.</p>{{end}}{{if .Episode}}<h3>Resumo registrado</h3>
+<p class="report-prose">{{.Episode}}</p>{{end}}<h3>Hipóteses</h3>
+<ul>{{range .Assumptions}}<li>{{.}}</li>{{else}}<li>Nenhuma hipótese registrada.</li>{{end}}</ul>
+<h3>Lacunas e limitações</h3>
+<ul>{{range .Unknowns}}<li>{{.}}</li>{{else}}<li>Nenhuma lacuna registrada neste resultado.</li>{{end}}</ul>
+<h3>Referências do parecer</h3>
+<ul>{{range .Evidence}}<li>{{.}}</li>{{else}}<li>Nenhuma referência registrada neste resultado.</li>{{end}}</ul>{{if .Raw}}<details>
+<summary>Resultado completo registrado</summary>
+<pre>{{.Raw}}</pre>
+</details>{{end}}</section>{{end}}
+<section id="report-strategies">
+<h2>Estratégias registradas</h2>{{range .Strategies}}<section class="report-strategy">
+<h3>{{.Title}}</h3>
+<p>Versão {{.Version}} · {{reportState .Status}} · {{reportMandate .Mandate}}</p>
+<p class="report-prose">{{.Hypothesis}}</p>
+<p>Horizonte: {{.TimeHorizon}}</p>
+<h3>Condições</h3>
+<ul>{{range .Conditions}}<li>{{.}}</li>{{else}}<li>Nenhuma condição registrada.</li>{{end}}</ul>
+<h3>Condições de invalidação</h3>
+<ul>{{range .InvalidationConditions}}<li>{{.}}</li>{{else}}<li>Nenhuma condição registrada.</li>{{end}}</ul>
+<h3>Instrumentos elegíveis</h3>
+<ul>{{range .EligibleInstruments}}<li>{{.}}</li>{{else}}<li>Nenhum instrumento registrado.</li>{{end}}</ul>
+<h3>Riscos</h3>
+<ul>{{range .Risks}}<li>{{.}}</li>{{else}}<li>Nenhum risco registrado.</li>{{end}}</ul>
+<details>
+<summary>Estratégia completa registrada</summary>
+<pre>{{.Raw}}</pre>
+</details>
+</section>{{else}}<p>Nenhuma estratégia foi persistida nesta rodada.</p>{{end}}</section>
+<section id="report-sources">
+<h2>Fontes da rodada</h2>
+<p>Corte da rodada: {{stamp .Detail.Run.CreatedAt}}. Consulte as datas de cada fonte antes de usar o parecer.</p>{{range .Sources}}<section class="report-source">
+<h3>{{if .URL}}<a href="{{.URL}}" rel="noopener noreferrer">{{.Title}}</a>{{else}}{{.Title}}{{end}}</h3>
+<p>{{.Summary}}</p>
+<p>Observada em {{stamp .ObservedAt}}{{if .PublishedAt}} · Publicada em {{investmentStamp .PublishedAt}}{{else}} · Data de publicação não registrada{{end}}</p>
+</section>{{else}}<p>Nenhuma fonte foi persistida nesta rodada.</p>{{end}}</section>{{else}}<h2>O arquivo está vazio</h2>
+<p>Os pareceres aparecerão aqui quando houver uma rodada registrada.</p>
+<section class="personal-finance-panel report-pending" data-personal-finance aria-labelledby="report-pending-title"><h3 id="report-pending-title">Prepare seus dados para a primeira análise</h3><p data-personal-status role="status">Consultando as pendências atuais…</p><ul data-personal-issues class="personal-issues"></ul><a href="/finance/profile">Preencher meus dados e objetivos</a></section>{{end}}</article>
+</div>
+</main>
+</div>
+</body>
+</html>

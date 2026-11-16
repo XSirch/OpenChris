@@ -1,0 +1,49 @@
+.personal-finance-panel{padding:24px 0;border-block:1px solid var(--line);margin:0 0 24px;min-width:0;overflow-wrap:anywhere}
+.personal-finance-panel h2,.personal-finance-panel h3{font-size:1rem;line-height:1.45;margin:0 0 12px}
+.personal-finance-panel p{color:var(--muted);line-height:1.65;margin:8px 0 12px}
+.personal-finance-panel a{color:var(--amber-light);text-underline-offset:4px;display:inline-block;min-height:44px;align-content:center}
+.personal-issues{list-style:none;padding:0;margin:12px 0}
+.personal-issues li{padding:12px 0;border-bottom:1px solid var(--line)}
+.personal-issues li:last-child{border-bottom:0}
+.personal-issues a{font-weight:650}
+.personal-issues p{margin:0;font-size:.875rem}
+.personal-cash{margin:0 0 16px}
+.personal-cash>div{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 16px;padding:10px 0;border-bottom:1px solid var(--line)}
+.personal-cash dt{color:var(--muted)}
+.personal-cash dd{margin:0;font-weight:650;font-variant-numeric:tabular-nums}
+.profile-main{max-width:920px;margin:auto;padding:36px 40px 80px;color:var(--paper)}
+.profile-main h1{font-size:2rem;line-height:1.3;margin:0 0 16px;letter-spacing:-.025em}
+.profile-intro{font-size:1rem;line-height:1.7;color:var(--muted);max-width:70ch;margin:0 0 28px}
+.profile-main fieldset{border:0;padding:0;margin:0;min-width:0}
+.profile-section{padding:28px 0;border-bottom:1px solid var(--line);scroll-margin-top:24px}
+.profile-section h2{font-size:1.25rem;margin:0 0 12px}
+.profile-section p,.profile-section small{color:var(--muted);line-height:1.65}
+.profile-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:20px}
+.profile-main label{display:grid;gap:8px;align-content:start;font-size:.9375rem;line-height:1.5}
+.profile-main small{font-size:.8125rem}
+.profile-main input,.profile-main select,.profile-main textarea{width:100%;min-height:48px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--paper);padding:12px;font:inherit;font-size:1rem;caret-color:var(--amber);scroll-margin-top:24px}
+.profile-main select{padding-right:28px;white-space:normal}
+.profile-main textarea{resize:vertical}
+.profile-main input::placeholder,.profile-main textarea::placeholder{color:var(--muted);opacity:1}
+.profile-main :focus-visible,.personal-finance-panel a:focus-visible{outline:2px solid var(--amber);outline-offset:4px}
+.profile-main .profile-goal{display:grid;grid-template-columns:2fr 1fr 1fr;gap:16px;border-bottom:1px solid var(--line);padding:16px 0 24px;margin-bottom:20px}
+.profile-goal legend{font-size:.875rem;color:var(--muted);padding-bottom:8px}
+.profile-goal button{justify-self:start;grid-column:1/-1}
+.profile-main .profile-checkbox{display:flex;align-items:flex-start;gap:12px}
+.profile-checkbox input{width:22px;height:22px;min-height:22px;flex-shrink:0;margin-top:3px;accent-color:var(--amber)}
+.profile-actions{display:flex;flex-wrap:wrap;gap:12px;padding-top:24px}
+.profile-main .button-primary,.profile-main .button-quiet{min-height:44px;font-size:.9375rem}
+.profile-feedback{color:var(--amber-light);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;margin:16px 0}
+.profile-main ::selection{background:var(--amber);color:var(--bg)}
+.classification-editor{margin-top:10px;text-align:left;font-size:.875rem;white-space:normal}
+.classification-editor summary{color:var(--amber-light);min-height:44px;align-content:center;cursor:pointer}
+.classification-editor form{display:grid;gap:12px;margin:12px 0;min-width:0}
+.classification-editor label{display:grid;gap:6px;white-space:normal}
+.classification-editor input:not([type=checkbox]),.classification-editor select{min-height:44px;width:100%;font-size:1rem;background:var(--surface);color:var(--paper);border:1px solid var(--line);border-radius:8px;padding:9px}
+.classification-editor .classification-rule{display:flex;align-items:flex-start;gap:8px}
+.classification-editor input[type=checkbox]{margin-top:5px;accent-color:var(--amber)}
+.classification-editor button{min-height:44px;justify-self:start}
+.classification-origin{display:block;color:var(--muted);font-size:.75rem;white-space:normal;margin-top:6px}
+@media(max-width:760px){.profile-main{padding:26px 20px calc(88px + env(safe-area-inset-bottom));font-size:1rem}.profile-fields,.profile-main .profile-goal{grid-template-columns:1fr}.profile-main h1{font-size:1.75rem}.profile-main .app-topbar{gap:12px}.personal-finance-panel{font-size:1rem}.report-pending{margin:24px 0}.profile-actions .button-primary{width:100%}}
+
+.report-pending-details summary{min-height:44px;cursor:pointer;align-content:center;color:var(--amber-light)}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/conselho/schemas/goal.schema.json",
+  "title": "goal",
+  "description": "Meta pessoal; valores e prazos podem estar ausentes sem inventar dados.",
+  "type": "object",
+  "properties": {
+    "goal_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "schema_version": {
+      "const": "goal.v1"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "desired_amount": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "pattern": "^-?\\d+(\\.\\d+)?$"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3,5}$"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false,
+          "description": "Use decimal string, never binary float, to serialize money."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "desired_date": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "date_flexibility": {
+      "type": "string",
+      "enum": [
+        "fixed",
+        "flexible",
+        "unknown"
+      ]
+    },
+    "class": {
+      "type": "string",
+      "enum": [
+        "obligation",
+        "protected",
+        "flexible",
+        "unspecified"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "active",
+        "paused",
+        "achieved",
+        "archived",
+        "deleted"
+      ]
+    },
+    "progress_amount": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "amount": {
+              "type": "string",
+              "pattern": "^-?\\d+(\\.\\d+)?$"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3,5}$"
+            }
+          },
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false,
+          "description": "Use decimal string, never binary float, to serialize money."
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "priority_confirmed": {
+      "type": "boolean"
+    },
+    "source_event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "goal_id",
+    "schema_version",
+    "user_id",
+    "title",
+    "description",
+    "desired_amount",
+    "desired_date",
+    "date_flexibility",
+    "class",
+    "status",
+    "progress_amount",
+    "priority_confirmed",
+    "source_event_id",
+    "version",
+    "updated_at"
+  ],
+  "additionalProperties": false
+}

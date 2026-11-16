@@ -1,0 +1,10 @@
+.git
+.tools
+.runtime
+.env*
+.superpowers
+bench/.venv
+bench/.tmp
+evidence
+docs
+*.docx
