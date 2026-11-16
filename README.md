@@ -1,6 +1,6 @@
 # OpenChris · CONSELHO
 
-OpenChris é um aplicativo de finanças pessoais para instalar no seu próprio servidor. Ele reúne gastos, patrimônio, investimentos e objetivos em um painel privado. Com o MeuPluggy, importa dados bancários autorizados. Com o Codex, produz pareceres que você pode consultar e comparar. O Telegram leva resumos e links para o painel. Você também pode usar o aplicativo só para registrar seus gastos e patrimônio.
+OpenChris é um aplicativo de finanças pessoais voltado a usuários brasileiros, para instalar no próprio servidor. Ele reúne gastos, patrimônio, investimentos e objetivos em um painel privado. Com o MeuPluggy, importa dados bancários autorizados. Com o Codex, produz pareceres que você pode consultar e comparar. O Telegram leva resumos e links para o painel. Você também pode usar o aplicativo só para registrar seus gastos e patrimônio.
 
 A instalação é individual. A integração bancária consulta os dados autorizados pelo titular. O aplicativo não executa PIX, pagamentos, transferências, compras, vendas ou resgates.
 
