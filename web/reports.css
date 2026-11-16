@@ -109,14 +109,13 @@
   overflow-wrap:anywhere
 }
 .report-reading pre {
-  white-space:pre-wrap;
+  white-space:break-spaces;
   overflow-wrap:anywhere;
   font-size:.84rem;
   line-height:1.7;
   background:#0b1d28;
   padding:20px;
-  max-width:100%;
-  overflow:auto
+  max-width:100%
 }
 .report-reading details {
   margin-top:24px
@@ -137,7 +136,7 @@
   padding:26px 20px 64px
 }
 .reports-layout {
-  grid-template-columns:1fr;
+  grid-template-columns:minmax(0,1fr);
   gap:24px
 }
 .reports-archive {
