@@ -33,7 +33,6 @@ const state = {
   month: isoToday().slice(0, 7),
   amount: null,
   category: '',
-  calcMode: 'compound',
   ecoTab: 'agenda',
   event: null,
 };
@@ -102,7 +101,6 @@ async function render(change = false) {
   if (change) {
     closeDialog();
     if (state.route !== route) {
-      state.calcMode = 'compound';
       state.category = '';
       if (route !== 'aportes') state.amount = null;
       if (route === 'gastos') state.month = currentMonth();
@@ -122,7 +120,7 @@ async function render(change = false) {
   const month = route === 'gastos' ? state.month : currentMonth();
   try {
     let content;
-    if (route === 'calculadoras') content = calculators(state.calcMode);
+    if (route === 'calculadoras') content = calculators();
     else if (route === 'mais') content = more();
     else if (route === 'economia') {
       const data = await api(
@@ -260,6 +258,18 @@ async function openAction(key, node) {
     await render();
     return;
   }
+  if (key === 'clear-calculator') {
+    const form = node.form;
+    const { mode, rate_period: period, principal } = form.elements;
+    const currentMode = mode.value;
+    const currentPeriod = period.value;
+    form.reset();
+    mode.value = currentMode;
+    period.value = currentPeriod;
+    updateCalculatorMode(form);
+    principal.focus();
+    return;
+  }
   if (key === 'csv-model') {
     saveCsv(node.dataset.kind);
     return;
@@ -372,10 +382,8 @@ document.addEventListener('change', (ev) => {
     state.category = el.value;
     main.innerHTML = spending(finance, state);
     main.querySelector('#category').focus();
-  } else if (el.name === 'calcMode') {
-    state.calcMode = el.value;
-    main.innerHTML = calculators(state.calcMode);
-    main.querySelector('input[name=calcMode]:checked').focus();
+  } else if ((el.name === 'mode' || el.name === 'rate_period') && el.form?.dataset.form === 'calc') {
+    updateCalculatorMode(el.form);
   } else if (el.name === 'kind' && el.closest('[data-form=import]')) {
     body.innerHTML = importForm(conn, el.value);
     body.querySelector('[name=kind]').focus();
@@ -389,7 +397,14 @@ document.addEventListener('change', (ev) => {
   }
 });
 document.addEventListener('input', (ev) => {
-  if (ev.target.closest('[data-form=calc]')) document.querySelector('#calc-result').replaceChildren();
+  const field = ev.target;
+  const form = field.form;
+  if (form?.dataset.form !== 'calc') return;
+  let value = field.value;
+  if (field.name === 'rate') value = value.replace(/\s*%\s*$/, '');
+  else if (['principal', 'monthly', 'target'].includes(field.name)) value = value.replace(/^\s*R\$\s*(?=\d)/i, '');
+  if (value !== field.value) field.value = value;
+  form.querySelector('#calc-result').replaceChildren();
 });
 dlg.addEventListener('close', () => {
   if (!dlg.open) body.replaceChildren();
@@ -399,9 +414,55 @@ window.addEventListener('pageshow', (ev) => {
   if (ev.persisted) location.reload();
 });
 
+function updateCalculatorMode(form) {
+  const mode = form.elements.mode.value;
+  for (const group of form.querySelectorAll('[data-hide-in]')) {
+    group.hidden = group.disabled = group.dataset.hideIn === mode;
+  }
+  form.querySelector('#calc-result').replaceChildren();
+}
+
+function calculatorAmount(value) {
+  const amount = value.trim();
+  if (/^(?:[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?|\d+,\d{1,2})$/.test(amount))
+    return amount.replaceAll('.', '').replace(',', '.');
+  return amount;
+}
+
+async function submitCalculator(form) {
+  const fields = new FormData(form);
+  const submitted = new URLSearchParams(fields).toString();
+  const { mode, rate_period: period, principal, monthly = '', target = '', months, rate } = Object.fromEntries(fields);
+  const output = form.querySelector('#calc-result');
+  const button = form.querySelector('[type=submit]');
+  button.disabled = true;
+  output.innerHTML = '<p class="loading">Calculando…</p>';
+  let content;
+  try {
+    const result = await api('/api/calculate', {
+      mode,
+      principal: calculatorAmount(principal) || '0',
+      monthly: calculatorAmount(monthly) || '0',
+      target: calculatorAmount(target),
+      months,
+      [period === 'month' ? 'monthly_rate' : 'annual_rate']: rate.trim(),
+    });
+    content = calcResult(mode, period, result);
+  } catch (err) {
+    content = `<p class="error">${esc(err.message)}</p>`;
+  } finally {
+    button.disabled = false;
+  }
+  if (form.isConnected && submitted === new URLSearchParams(new FormData(form)).toString()) {
+    output.innerHTML = content;
+    output.scrollIntoView({ block: 'nearest' });
+  }
+}
+
 async function submit(form) {
-  const key = form.dataset.form,
-    fd = new FormData(form),
+  const key = form.dataset.form;
+  if (key === 'calc') return submitCalculator(form);
+  const fd = new FormData(form),
     data = Object.fromEntries(fd),
     btn = form.querySelector('[type=submit]');
   const currentDialog = dialogId;
@@ -415,20 +476,6 @@ async function submit(form) {
         body.querySelector(`[data-action="agent-settings"][data-id="${form.dataset.kind}"]`)?.focus();
       }
       notify('Escolha salva.');
-      return;
-    }
-    if (key === 'calc') {
-      const mode = state.calcMode,
-        seq = loadId,
-        serialized = new URLSearchParams(fd).toString();
-      const result = await api('/api/calculate', { ...data, mode });
-      if (
-        seq === loadId &&
-        mode === state.calcMode &&
-        form.isConnected &&
-        serialized === new URLSearchParams(new FormData(form)).toString()
-      )
-        document.querySelector('#calc-result').innerHTML = calcResult(mode, result);
       return;
     }
     if (key === 'simulate') {
@@ -513,10 +560,7 @@ async function submit(form) {
     }
     notify(message);
   } catch (err) {
-    if (key === 'calc' && form.isConnected) {
-      const output = document.querySelector('#calc-result');
-      output.innerHTML = `<p class="error">${esc(err.message)}</p>`;
-    } else if (currentDialog === dialogId && dlg.open) dialogError(err.message);
+    if (currentDialog === dialogId && dlg.open) dialogError(err.message);
     else notify(err.message);
   } finally {
     btn.disabled = false;

@@ -231,6 +231,26 @@ class FinanceTest(unittest.TestCase):
                 money(value)
         self.assertIsNone(self.db.get(Profile, 1))
 
+    def test_monthly_rate_uses_compounding_in_all_calculators(self):
+        data = {"principal": "100.00", "monthly_rate": "1,00", "monthly": "10.00",
+                "months": 3, "target": "133.34"}
+        projection = calculate(dict(data, mode="compound"))
+        self.assertEqual((projection["value"], projection["invested"], projection["earnings"]),
+                         ("133.33", "130.00", "3.33"))
+        self.assertAlmostEqual(Decimal(projection["equivalent_rate"]), Decimal("12.68250301"))
+        self.assertEqual(calculate(dict(data, mode="time"))["value"], 4)
+        self.assertEqual(calculate(dict(data, mode="monthly"))["value"], "10.01")
+
+        annual = {key: value for key, value in data.items() if key != "monthly_rate"}
+        projection = calculate(dict(annual, mode="compound", annual_rate="12.68250301"))
+        self.assertEqual(projection["value"], "133.33")
+        self.assertAlmostEqual(Decimal(projection["equivalent_rate"]), Decimal("1"))
+
+        with self.assertRaisesRegex(ValueError, "uma única taxa"):
+            calculate(dict(data, mode="compound", annual_rate="12"))
+        with self.assertRaisesRegex(ValueError, "taxa mensal"):
+            calculate(dict(data, mode="compound", monthly_rate="-100"))
+
     def test_json_api_rolls_back_an_invalid_update(self):
         @contextmanager
         def session_scope():

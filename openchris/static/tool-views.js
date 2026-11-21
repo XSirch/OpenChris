@@ -21,64 +21,75 @@ const calculatorModes = {
   time: 'Tempo até a meta',
   monthly: 'Aporte necessário',
 };
-export function calculators(mode = 'compound') {
-  const calcFields =
-    amountField('principal', 'Valor inicial') +
-    (mode !== 'monthly' ? amountField('monthly', 'Aporte mensal') : '') +
-    field('annual_rate', 'Taxa de juros', {
-      type: 'number',
-      unit: '% ao ano',
-      attr: 'step="any" inputmode="decimal"',
-      required: true,
-    }) +
-    (mode !== 'time'
-      ? field('months', 'Prazo', {
-          type: 'number',
-          unit: 'meses',
-          attr: 'step="1" min="1" inputmode="numeric"',
-          required: true,
-        })
-      : '') +
-    (mode !== 'compound' ? amountField('target', 'Valor da meta') : '');
+export function calculators() {
+  const amountOptions = { type: 'text', attr: 'inputmode="decimal"' };
+  const conditional = (mode, content) =>
+    `<fieldset class="calc-field" data-hide-in="${mode}" ${mode === 'compound' ? 'hidden disabled' : ''}>${content}</fieldset>`;
   return (
     header('Calculadoras', '', true) +
     /* HTML */ `<section class="narrow">
-      <fieldset class="radio-tabs">
-        <legend class="sr">Escolha uma calculadora</legend>
-        ${Object.entries(calculatorModes)
-          .map(
-            ([id, label]) =>
-              /* HTML */ `<label
-                ><input
-                  type="radio"
-                  name="calcMode"
-                  value="${id}"
-                  ${id === mode ? 'checked' : ''}
-                />${label}</label
-              >`,
-          )
-          .join('')}
-      </fieldset>
       <form data-form="calc">
-        <div class="form-grid">${calcFields}</div>
-        ${buttonSubmit('Calcular')}
+        <fieldset class="calc-modes">
+          <legend class="sr">Escolha uma calculadora</legend>
+          ${Object.entries(calculatorModes)
+            .map(
+              ([id, label]) =>
+                `<label><input class="sr" type="radio" name="mode" value="${id}" ${id === 'compound' ? 'checked' : ''}>${label}</label>`,
+            )
+            .join('')}
+        </fieldset>
+        <div class="form-grid paired">
+          ${amountField('principal', 'Valor inicial (opcional)', '', false, amountOptions)}
+          ${conditional('monthly', amountField('monthly', 'Aporte mensal (opcional)', '', false, amountOptions))}
+          <div class="calc-rate full">
+            ${field('rate', 'Taxa de juros', { unit: '%', attr: 'inputmode="decimal"', required: true })}
+            ${choice('rate_period', 'Período da taxa', { month: 'Ao mês', year: 'Ao ano' }, 'month')}
+          </div>
+          ${conditional('time', field('months', 'Prazo', {
+            type: 'number',
+            unit: 'meses',
+            attr: 'step="1" min="1" max="1200" inputmode="numeric"',
+            required: true,
+          }))}
+          ${conditional('compound', amountField('target', 'Valor da meta', '', true, amountOptions))}
+        </div>
+        <div class="actions calc-actions">
+          <button type="submit" class="primary">Calcular</button>
+          ${action('clear-calculator', 'Limpar', 'secondary')}
+        </div>
+        <div id="calc-result" role="status" class="result"></div>
       </form>
-      <div id="calc-result" role="status" aria-live="polite" class="result"></div>
     </section>`
   );
 }
-export function calcResult(mode, result) {
+function duration(totalMonths) {
+  if (totalMonths === 0) return 'Meta já atingida';
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  return [
+    years ? years + (years === 1 ? ' ano' : ' anos') : '',
+    months ? months + (months === 1 ? ' mês' : ' meses') : '',
+  ].filter(Boolean).join(' e ');
+}
+
+export function calcResult(mode, period, result) {
   const label = {
     compound: 'Valor final estimado',
     time: 'Tempo estimado',
     monthly: 'Aporte mensal necessário',
   }[mode];
-  const month = Number(result.value);
-  return /* HTML */ `<section class="inset">
+  const rate = Number(result.equivalent_rate);
+  const equivalent = rate.toLocaleString('pt-BR', { maximumFractionDigits: Math.abs(rate) < 0.0001 ? 10 : 4 });
+  return /* HTML */ `<section class="inset calc-summary">
     <p class="metric-label">${label}</p>
     <p class="value">
-      ${result.unit === 'months' ? month.toLocaleString('pt-BR') + (month === 1 ? ' mês' : ' meses') : money(result.value)}
+      ${result.unit === 'months' ? duration(result.value) : money(result.value)}
     </p>
+    <div class="rows">
+      ${mode === 'compound' ? row('Total aplicado', money(result.invested)) + row('Rendimento estimado', money(result.earnings)) : ''}
+      ${row('Taxa equivalente', `${equivalent}% ao ${period === 'month' ? 'ano' : 'mês'}`)}
+    </div>
+    ${note('Projeção bruta, com aportes no fim de cada mês.')}
   </section>`;
 }
 function eventItem(e, active) {

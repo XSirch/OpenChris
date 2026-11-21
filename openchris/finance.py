@@ -690,23 +690,31 @@ def calculate(data):
     if mode not in ("compound", "time", "monthly"):
         raise ValueError("Escolha uma das três calculadoras.")
     principal = money(data.get("principal"), "o valor inicial")
+    monthly_rate = "monthly_rate" in data
+    if monthly_rate and "annual_rate" in data:
+        raise ValueError("Informe uma única taxa de juros.")
     try:
-        rate = Decimal(str(data.get("annual_rate")))
+        rate = Decimal(str(data.get("monthly_rate" if monthly_rate else "annual_rate")).replace(",", "."))
         if not rate.is_finite() or not -100 < rate <= 1000 or rate.as_tuple().exponent < -8:
             raise ValueError
     except (InvalidOperation, ValueError):
-        raise ValueError("Informe a taxa anual em porcentagem, maior que -100% e de até 1.000%.") from None
+        period = "mensal" if monthly_rate else "anual"
+        raise ValueError(f"Informe a taxa {period} em porcentagem, maior que -100% e de até 1.000%, "
+                         "com até oito casas decimais.") from None
     payment = money(data.get("monthly"), "o aporte mensal") if mode != "monthly" else ZERO
     target = money(data.get("target"), "o valor da meta") if mode != "compound" else None
     with localcontext() as ctx:
         ctx.prec = 48
-        annual_factor = 1 + rate / HUNDRED
-        factor = annual_factor ** (Decimal(1) / 12)
+        rate_factor = 1 + rate / HUNDRED
+        factor = rate_factor if monthly_rate else rate_factor ** (Decimal(1) / 12)
+        annual_factor = factor ** 12 if monthly_rate else rate_factor
+        equivalent = ((annual_factor if monthly_rate else factor) - 1) * HUNDRED
+        details = {"equivalent_rate": f"{equivalent:.10f}"}
         if mode == "time":
             current = principal
             for n in range(1201):
                 if current.quantize(CENT, rounding=ROUND_HALF_UP) >= target:
-                    return {"value": n, "unit": "months"}
+                    return {"value": n, "unit": "months", **details}
                 next_value = current * factor + payment
                 if next_value <= current:
                     break
@@ -725,4 +733,7 @@ def calculate(data):
         # Arredondar para cima garante que o aporte calculado alcança a meta.
         if mode == "monthly":
             answer = -(-answer).quantize(CENT, rounding=ROUND_FLOOR)
-        return {"value": _cash(answer), "unit": "BRL"}
+        else:
+            invested = principal + payment * months
+            details.update(invested=_cash(invested), earnings=_cash(answer - invested))
+        return {"value": _cash(answer), "unit": "BRL", **details}
