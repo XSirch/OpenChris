@@ -1,6 +1,6 @@
 import { api, esc, has, isoToday, icon, action, link, money } from './ui.js';
 import { today, portfolio, spending, contributions } from './finance-views.js';
-import { calculators, calcResult, economy, more, researchers, assetSheet } from './tool-views.js';
+import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js';
 import {
   advanceForm,
   linkChargeForm,
@@ -39,6 +39,7 @@ const state = {
 };
 let finance = null,
   conn = null,
+  agents = null,
   economic = null,
   loadId = 0,
   dialogId = 0,
@@ -282,10 +283,16 @@ async function openAction(key, node) {
     body.innerHTML = key === 'banco' ? connections(data) : importForm(data, key.slice(7));
     return;
   }
+  if (key === 'agent-settings' && Object.hasOwn(agents?.roles || {}, id)) {
+    dialog(agents.roles[id], agentSettings(agents, id));
+    body.querySelector('[name=model]').focus();
+    return;
+  }
   if (key === 'pesquisa' || key === 'asset') {
     const d = loadingDialog(key === 'asset' ? 'Ficha do investimento' : 'Agentes e pesquisas');
     const data = await api(key === 'asset' ? '/api/assets/' + encodeURIComponent(id) : '/api/agents');
     if (dialogId !== d || !dlg.open) return;
+    if (key === 'pesquisa') agents = data;
     body.innerHTML =
       key === 'asset'
         ? assetSheet(
@@ -375,6 +382,10 @@ document.addEventListener('change', (ev) => {
   } else if (el.name === 'installment_group' && el.closest('[data-form=advance]')) {
     body.innerHTML = advanceForm(finance, el.value);
     body.querySelector('[name=installment_group]').focus();
+  } else if (el.name === 'model' && el.closest('[data-form=agent-settings]')) {
+    const previous = el.form.elements.effort.value;
+    const effort = agents.models[el.value]?.efforts.includes(previous) ? previous : '';
+    el.form.querySelector('[data-effort-choice]').innerHTML = effortChoice(agents.models, el.value, effort);
   }
 });
 document.addEventListener('input', (ev) => {
@@ -397,6 +408,15 @@ async function submit(form) {
   btn.disabled = true;
   dialogError('');
   try {
+    if (key === 'agent-settings') {
+      await api('/api/agents/' + encodeURIComponent(form.dataset.kind) + '/settings', data);
+      if (currentDialog === dialogId && dlg.open) {
+        await openAction('pesquisa');
+        body.querySelector(`[data-action="agent-settings"][data-id="${form.dataset.kind}"]`)?.focus();
+      }
+      notify('Escolha salva.');
+      return;
+    }
     if (key === 'calc') {
       const mode = state.calcMode,
         seq = loadId,

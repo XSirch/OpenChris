@@ -4,23 +4,31 @@ import hashlib
 import json
 import os
 import re
+import subprocess
 from datetime import date, datetime, time, timedelta, timezone
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import requests
 from flask import Blueprint, jsonify, request
-from sqlalchemy import JSON, Date, DateTime, String, func, or_, select
+from sqlalchemy import JSON, Date, DateTime, String, func, or_, select, update
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import finance
-from .agent_runner import (AgentPause, OFFICIAL_DOMAINS, PreflightPause, SCHEMAS, codex_result, normalized,
-                           source_hosts, validate_result, verify_fields)
+from .agent_runner import (AgentPause, ModelUnavailable, OFFICIAL_DOMAINS, PreflightPause, SCHEMAS, codex_result,
+                           model_catalog, normalized, source_hosts, validate_result, verify_fields)
 from .db import Base, db_session
 from .economy import FEEDS
 
 bp = Blueprint("automation", __name__)
 LOCAL = ZoneInfo("America/Sao_Paulo")
+AGENTS = {"expense": "Classificação de gastos", "classify": "Classificação de investimentos",
+          "asset": "Pesquisa de ativos", "macro": "Economia", "risk": "Risco da carteira",
+          "report": "Síntese dos especialistas"}
+
+
+def model_notice(kind):
+    return f"{AGENTS[kind]}: revise o modelo e o esforço em Agentes e pesquisas."
 
 
 def now():
@@ -56,6 +64,39 @@ class Runtime(Base):
     until: Mapped[datetime | None] = mapped_column(DateTime)
     count: Mapped[int] = mapped_column(default=0)
     notice: Mapped[str] = mapped_column(default="")
+
+
+class CodexSettings(Base):
+    __tablename__ = "codex_settings"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    models: Mapped[dict] = mapped_column(JSON, default=dict)
+    preferences: Mapped[dict] = mapped_column(JSON, default=dict)
+    refresh_after: Mapped[datetime] = mapped_column(DateTime)
+
+
+def refresh_models():
+    with db_session() as db:
+        settings = db.get(CodexSettings, 1)
+        if settings and settings.refresh_after > now():
+            return
+    try:
+        models = model_catalog()
+    except (OSError, subprocess.SubprocessError, KeyError, TypeError, ValueError):
+        models = None
+    with db_session() as db:
+        settings = db.get(CodexSettings, 1)
+        if settings is None:
+            settings = CodexSettings(id=1)
+            db.add(settings)
+        if models:
+            settings.models = models
+        settings.refresh_after = now() + timedelta(minutes=60 if models else 5)
+
+
+def accepts(models, model, effort):
+    if not model:
+        return not effort
+    return model in models and (not effort or effort in models[model]["efforts"])
 
 
 class AssetFile(Base):
@@ -390,6 +431,12 @@ def run_one():
             control = runtime(db, "codex")
             if os.getenv("CODEX_ENABLED") != "1" or (control.until and control.until > now()):
                 return False
+            settings = db.get(CodexSettings, 1)
+            options = settings.preferences.get(kind, {}) if settings else {}
+            if options and not accepts(settings.models, **options):
+                for job in jobs:
+                    job.state, job.ready_at, job.notice = "retry", now() + timedelta(hours=1), model_notice(kind)
+                return True
             quota = runtime(db, "quota:" + day().isoformat())
             if quota.count >= max(0, int(os.getenv("CODEX_DAILY_LIMIT", "12"))):
                 end = datetime.combine(day() + timedelta(days=1), time.min, LOCAL)
@@ -401,7 +448,7 @@ def run_one():
             job.state, job.attempts, job.ready_at = "running", job.attempts + 1, now() + timedelta(minutes=15)
         ids = [job.id for job in jobs]
     try:
-        out = send_telegram(context) if kind == "telegram" else codex_result(kind, context)
+        out = send_telegram(context) if kind == "telegram" else codex_result(kind, context, **options)
         verified = None
         if kind != "telegram":
             validate_result(out, SCHEMAS[kind])
@@ -415,7 +462,7 @@ def run_one():
                 control.checked_at, control.notice, control.until = now(), "", None
     except Exception as error:
         with db_session() as db:
-            if kind != "telegram" and isinstance(error, PreflightPause):
+            if kind != "telegram" and isinstance(error, (PreflightPause, ModelUnavailable)):
                 db.get(Runtime, quota.key).count -= 1
             for key in ids:
                 job = db.get(Job, key)
@@ -425,6 +472,8 @@ def run_one():
                 job.state = "uncertain" if kind == "telegram" and not pause else "retry"
                 job.notice = (str(error) if pause else "Confira no Telegram se o aviso chegou."
                               if kind == "telegram" else "A tarefa não terminou. Outra tentativa está agendada.")
+                if isinstance(error, ModelUnavailable):
+                    job.notice, job.ready_at = model_notice(kind), now() + timedelta(hours=1)
                 if pause and kind != "telegram":
                     control = runtime(db, "codex")
                     control.notice, control.until = job.notice, job.ready_at
@@ -436,6 +485,7 @@ def tick():
     with db_session() as db:
         worker = runtime(db, "worker")
         worker.checked_at, worker.count = now(), int(os.getenv("CODEX_ENABLED") == "1")
+    refresh_models()
     refresh_feeds()
     with db_session() as db:
         plan(db)
@@ -463,6 +513,7 @@ def economy_api():
 @bp.get("/api/agents")
 def agents_api():
     with db_session() as db:
+        settings = db.get(CodexSettings, 1)
         control = db.get(Runtime, "codex")
         worker = db.get(Runtime, "worker")
         queue = {state: 0 for state in ("pending", "running", "done", "retry", "uncertain")}
@@ -470,8 +521,33 @@ def agents_api():
         latest = db.scalar(select(Job.notice).where(Job.state.in_(("retry", "uncertain")))
                            .order_by(Job.id.desc()).limit(1))
         return jsonify(enabled=bool(worker and worker.count), queue=queue, worker_seen_at=iso(worker.checked_at) if worker else None,
+                       roles=AGENTS, models=settings.models if settings else {},
+                       preferences=settings.preferences if settings else {},
                        last_success=iso(control.checked_at) if control else None,
                        notice=(control.notice if control else "") or latest or "")
+
+
+@bp.post("/api/agents/<kind>/settings")
+def save_agent_settings(kind):
+    if kind not in AGENTS:
+        return jsonify(error="Agente desconhecido."), 404
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or set(data) != {"model", "effort"} or not all(isinstance(v, str) for v in data.values()):
+        return jsonify(error="Informe o modelo e o esforço."), 400
+    with db_session() as db:
+        settings = db.get(CodexSettings, 1, with_for_update=True)
+        if not accepts(settings.models if settings else {}, **data):
+            return jsonify(error="Escolha um modelo disponível e um esforço aceito por ele."), 400
+        if settings:
+            preferences = dict(settings.preferences)
+            if data["model"]:
+                preferences[kind] = data
+            else:
+                preferences.pop(kind, None)
+            settings.preferences = preferences
+        db.execute(update(Job).where(Job.kind == kind, Job.state == "retry", Job.notice == model_notice(kind))
+                   .values(ready_at=now(), notice=""))
+    return jsonify(status="saved")
 
 
 @bp.get("/api/assets/<int:position_id>")

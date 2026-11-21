@@ -24,6 +24,8 @@ Use um `external_id` estável em cada linha, especialmente se houver duas compra
 
 No console do contêiner **worker**, execute `codex login --device-auth` e conclua a autorização no site oficial da OpenAI. Confira com `codex login status`. A autenticação fica no volume privado do worker. O fluxo usa a conta ChatGPT do titular e a fila aguarda nova disponibilidade quando a sessão ou a franquia exigirem. `CODEX_DAILY_LIMIT` limita as execuções locais por dia, além dos limites da assinatura. `ASSET_SOURCE_HOSTS` aceita domínios exatos de emissores ou gestores a incluir na pesquisa. [Autenticação do Codex](https://developers.openai.com/codex/auth)
 
+Em **Mais → Agentes e pesquisas**, toque no agente para escolher seu modelo e esforço de raciocínio. A lista vem do Codex instalado no servidor e mostra os níveis aceitos por cada modelo. A escolha fica no banco e vale a partir da próxima tarefa. Se preferir que o Codex decida, selecione **Padrão do Codex**.
+
 A agenda usa divulgações do IBGE e comunicados do Banco Central. Os especialistas analisam os dados em sequência e a conclusão conserva as evidências e o debate. O calendário antecipado do Copom está cadastrado até dezembro de 2027. Para receber avisos, configure `TELEGRAM_ENABLED=1`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` e `PUBLIC_BASE_URL`. A compra automática de renda fixa no BTG depende da confirmação de um canal oficial para a conta PF.
 
 ## Validação local

@@ -9,6 +9,7 @@ import {
   amountField,
   field,
   buttonSubmit,
+  choice,
   ref,
   empty,
   note,
@@ -195,7 +196,7 @@ const tools = [
   ['economia', 'Economia', 'Agenda, cenários e análises.'],
   ['perfil', 'Perfil financeiro', 'Objetivos, reserva e tolerância a perdas.'],
   ['banco', 'Conexões e extratos', 'Bancos conectados e importação de arquivos.'],
-  ['pesquisa', 'Agentes e pesquisas', 'Fila de tarefas e última atualização.'],
+  ['pesquisa', 'Agentes e pesquisas', 'Modelos, esforço de raciocínio e fila de tarefas.'],
   ['sair', 'Sair da conta', ''],
 ];
 export function more() {
@@ -214,9 +215,46 @@ export function more() {
     </div>`
   );
 }
+const efforts = { none: 'Nenhum', minimal: 'Mínimo', low: 'Baixo', medium: 'Médio', high: 'Alto',
+  xhigh: 'Muito alto', max: 'Máximo', ultra: 'Ultra' };
+const effortLabel = (value) => efforts[value] || value;
+
+export function effortChoice(models, model, selected = '') {
+  const info = models[model];
+  const options = { '': info?.default ? 'Padrão do modelo (' + effortLabel(info.default) + ')' : 'Padrão do modelo' };
+  for (const level of info?.efforts || []) options[level] = effortLabel(level);
+  if (selected && !Object.hasOwn(options, selected)) options[selected] = effortLabel(selected) + ' (indisponível)';
+  return choice('effort', 'Esforço de raciocínio', options, selected);
+}
+
+export function agentSettings(data, kind) {
+  const { model = '', effort = '' } = data.preferences[kind] || {};
+  const models = { '': 'Padrão do Codex', ...Object.fromEntries(Object.keys(data.models).map((id) => [id, id])) };
+  if (model && !Object.hasOwn(data.models, model)) models[model] = model + ' (indisponível)';
+  return `<form data-form="agent-settings" data-kind="${esc(kind)}">
+    <div class="form-grid">
+      ${choice('model', 'Modelo', models, model)}
+      <div data-effort-choice>${effortChoice(data.models, model, effort)}</div>
+      ${note('A escolha vale a partir da próxima tarefa deste agente.')}
+    </div>
+    ${buttonSubmit('Salvar escolha')}
+    ${action('pesquisa', 'Voltar aos agentes')}
+  </form>`;
+}
+
 export function researchers(data) {
   const queue = data.queue || {};
+  const agents = Object.entries(data.roles).map(([kind, label]) => {
+    const { model, effort } = data.preferences[kind] || {};
+    const setting = model ? model + ' · ' + (effort ? effortLabel(effort) : 'Esforço padrão') : 'Padrão do Codex';
+    return action('agent-settings', `<span class="tool-title">${esc(label)}<small>${esc(setting)}</small></span>${icon('right', 16)}`,
+      'row-link', `data-id="${esc(kind)}"`);
+  }).join('');
   return /* HTML */ `<div class="stack tight">
+    <h3>Modelo por agente</h3>
+    ${Object.keys(data.models).length ? '' : note('Aguardando a lista de modelos do Codex.')}
+    <div class="tools-list">${agents}</div>
+    <h3>Fila de tarefas</h3>
     ${note(data.enabled ? 'Rotinas automáticas habilitadas.' : 'As rotinas automáticas estão desativadas.')}${data.notice ? `<p>${esc(data.notice)}</p>` : ''}
     <div class="rows">
       ${row('Pendentes', Number(queue.pending || 0))}${row('Em execução', Number(queue.running || 0))}${row('Aguardando nova tentativa', Number(queue.retry || 0))}${queue.uncertain ? row('Envios sem confirmação', Number(queue.uncertain)) : ''}${row('Concluídas', Number(queue.done || 0))}

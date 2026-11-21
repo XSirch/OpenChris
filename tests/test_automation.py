@@ -19,6 +19,7 @@ def site(tmp_path, monkeypatch):
     monkeypatch.setenv("CODEX_DAILY_LIMIT", "12")
     monkeypatch.delenv("TELEGRAM_ENABLED", raising=False)
     monkeypatch.setattr(jobs, "FEEDS", {})
+    monkeypatch.setattr(jobs, "model_catalog", lambda: {"model-test": {"efforts": ["low", "high"], "default": "low"}})
     def offline(*args, **kwargs):
         pytest.fail("Unexpected external call")
     monkeypatch.setattr(requests.sessions.Session, "request", offline)
@@ -32,6 +33,43 @@ def site(tmp_path, monkeypatch):
 def entry(db, description, num):
     return finance.upsert_entry(db, {"date": jobs.day().isoformat(), "description": description,
                                 "amount": "92.31", "kind": "expense", "external_id": "test:" + str(num)}, "csv")
+
+
+def test_role_settings_apply_at_dispatch_and_survive_restart(site, monkeypatch):
+    jobs.refresh_models()
+    url = "/api/agents/expense/settings"
+    explicit = {"model": "model-test", "effort": "high"}
+    assert site.post(url, json=explicit).status_code == 200
+    assert site.post(url, json={**explicit, "effort": "ultra"}).status_code == 400
+    assert site.post(url, json={"model": "-c", "effort": ""}).status_code == 400
+    assert site.post("/api/agents/telegram/settings", json=explicit).status_code == 404
+    status = site.get("/api/agents").json
+    assert set(status["roles"]) == set(runner.SCHEMAS)
+    assert status["preferences"] == {"expense": explicit}
+    with db_session() as db:
+        entry(db, "Padaria", 1)
+        jobs.plan(db)
+        db.get(jobs.CodexSettings, 1).models = {}
+    assert jobs.run_one()
+    with db_session() as db:
+        job = db.scalar(select(jobs.Job))
+        assert job.state == "retry" and job.attempts == 0
+        assert db.get(jobs.Runtime, "quota:" + jobs.day().isoformat()) is None
+        db.get(jobs.CodexSettings, 1).refresh_after = jobs.now()
+    jobs.refresh_models()
+    assert site.post(url, json=explicit).status_code == 200
+    calls = []
+    def classify(kind, batch, **options):
+        calls.append(options)
+        return {"items": [dict(id=e["id"], kind="expense", category="Mercado", confident=True) for e in batch]}
+    monkeypatch.setattr(jobs, "codex_result", classify)
+    assert jobs.run_one() and calls == [explicit]
+    assert site.post(url, json={"model": "", "effort": ""}).status_code == 200
+    assert site.get("/api/agents").json["preferences"] == {}
+    with db_session() as db:
+        entry(db, "Outra compra", 2)
+        jobs.plan(db)
+    assert jobs.run_one() and calls == [explicit, {}]
 
 
 def test_batch_preserves_manual_changes_and_pending(site, monkeypatch):
@@ -235,6 +273,10 @@ def test_cli_authentication_and_execution_contract(site, monkeypatch, tmp_path):
     assert len(calls) == 1
     login[0] = "Logged in using ChatGPT"
     assert runner.codex_result("expense", []) == {"items": []}
+    assert "--model" not in calls[-1] and not any("model_reasoning_effort" in arg for arg in calls[-1])
+    runner.codex_result("expense", [], model="model-test", effort="high")
+    assert calls[-1][calls[-1].index("--model") + 1] == "model-test"
+    assert 'model_reasoning_effort="high"' in calls[-1] and calls[-1][-1] == "-"
 
 
 def test_public_feed_requires_matching_release(site, monkeypatch):
