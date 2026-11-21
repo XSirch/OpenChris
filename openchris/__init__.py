@@ -1,0 +1,1 @@
+"""OpenChris, finanças pessoais."""

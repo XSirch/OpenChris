@@ -1,0 +1,6 @@
+**
+!requirements.txt
+!openchris/
+!openchris/**
+**/__pycache__/
+**/*.pyc

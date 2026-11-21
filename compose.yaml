@@ -1,0 +1,73 @@
+services:
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "8000"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}
+      OPENCHRIS_PASSWORD: ${OPENCHRIS_PASSWORD:?Defina a senha de acesso ao OpenChris}
+      COOKIE_SECURE: ${COOKIE_SECURE:-1}
+      PLUGGY_CLIENT_ID: ${PLUGGY_CLIENT_ID:-}
+      PLUGGY_CLIENT_SECRET: ${PLUGGY_CLIENT_SECRET:-}
+      PLUGGY_ITEM_IDS: ${PLUGGY_ITEM_IDS:-}
+      PLUGGY_OWNER_ID: ${PLUGGY_OWNER_ID:-openchris-personal}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+    volumes:
+      - web-state:/var/lib/openchris
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/readyz', timeout=3)"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: openchris
+      POSTGRES_USER: openchris
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openchris -d openchris"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    init: true
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}
+      PLUGGY_CLIENT_ID: ${PLUGGY_CLIENT_ID:-}
+      PLUGGY_CLIENT_SECRET: ${PLUGGY_CLIENT_SECRET:-}
+      PLUGGY_ITEM_IDS: ${PLUGGY_ITEM_IDS:-}
+      PLUGGY_OWNER_ID: ${PLUGGY_OWNER_ID:-openchris-personal}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      CODEX_ENABLED: ${CODEX_ENABLED:-1}
+      CODEX_DAILY_LIMIT: ${CODEX_DAILY_LIMIT:-12}
+      ASSET_SOURCE_HOSTS: ${ASSET_SOURCE_HOSTS:-}
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED:-0}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - codex-session:/var/lib/codex
+
+volumes:
+  postgres-data:
+  web-state:
+  codex-session:
