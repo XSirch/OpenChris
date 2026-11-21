@@ -400,11 +400,20 @@ document.addEventListener('input', (ev) => {
   const field = ev.target;
   const form = field.form;
   if (form?.dataset.form !== 'calc') return;
-  let value = field.value;
-  if (field.name === 'rate') value = value.replace(/\s*%\s*$/, '');
-  else if (['principal', 'monthly', 'target'].includes(field.name)) value = value.replace(/^\s*R\$\s*(?=\d)/i, '');
-  if (value !== field.value) field.value = value;
+  if (field.name === 'rate' || ['principal', 'monthly', 'target'].includes(field.name)) {
+    if (ev.inputType === 'insertText' && ev.data === '.' && !field.value.includes(',')) {
+      const caret = field.selectionStart;
+      field.value = field.value.slice(0, caret - 1) + ',' + field.value.slice(caret);
+      field.setSelectionRange(caret, caret);
+    }
+    formatCalculatorField(field, false, /^(insertText|delete)/.test(ev.inputType));
+  }
   form.querySelector('#calc-result').replaceChildren();
+});
+document.addEventListener('focusout', (ev) => {
+  const field = ev.target;
+  if (field.form?.dataset.form === 'calc' && ['principal', 'monthly', 'target'].includes(field.name))
+    formatCalculatorField(field, true);
 });
 dlg.addEventListener('close', () => {
   if (!dlg.open) body.replaceChildren();
@@ -422,11 +431,35 @@ function updateCalculatorMode(form) {
   form.querySelector('#calc-result').replaceChildren();
 }
 
-function calculatorAmount(value) {
-  const amount = value.trim();
-  if (/^(?:[1-9]\d{0,2}(?:\.\d{3})+(?:,\d{1,2})?|\d+,\d{1,2})$/.test(amount))
-    return amount.replaceAll('.', '').replace(',', '.');
-  return amount;
+function calculatorNumber(value, rate = false) {
+  const clean = value.trim().replace(rate ? /\s*%$/ : /^R\$\s*/i, '');
+  if (/^-?(?:\d+|\d{1,3}(?:\.\d{3})+),\d*$/.test(clean) ||
+      (!rate && /^\d{1,3}(?:\.\d{3})+$/.test(clean)))
+    return clean.replaceAll('.', '').replace(',', '.');
+  return clean;
+}
+
+function formatCalculatorField(field, fixed = false, editing = false) {
+  const rate = field.name === 'rate';
+  const raw = !rate && editing && !field.value.includes(',') ? field.value.replaceAll('.', '') : field.value;
+  const normalized = calculatorNumber(raw, rate);
+  if (!/^-?\d+(?:\.\d*)?$/.test(normalized) || (!rate && normalized.startsWith('-'))) return;
+  const [whole, decimals] = normalized.split('.');
+  const precision = rate ? 8 : 2;
+  if ((decimals?.length ?? 0) > precision) return;
+  const integer = rate ? whole : whole.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const fraction = fixed ? (decimals ?? '').padEnd(2, '0') : decimals;
+  const value = fraction === undefined ? integer : integer + ',' + fraction;
+  if (value === field.value) return;
+  const after = field.value.slice(field.selectionEnd).replace(/\D/g, '').length;
+  field.value = value;
+  if (!fixed) {
+    let caret = value.length;
+    for (let left = after; left > 0 && caret > 0;) {
+      if (/\d/.test(value[--caret])) left--;
+    }
+    field.setSelectionRange(caret, caret);
+  }
 }
 
 async function submitCalculator(form) {
@@ -441,11 +474,11 @@ async function submitCalculator(form) {
   try {
     const result = await api('/api/calculate', {
       mode,
-      principal: calculatorAmount(principal) || '0',
-      monthly: calculatorAmount(monthly) || '0',
-      target: calculatorAmount(target),
+      principal: calculatorNumber(principal) || '0',
+      monthly: calculatorNumber(monthly) || '0',
+      target: calculatorNumber(target),
       months,
-      [period === 'month' ? 'monthly_rate' : 'annual_rate']: rate.trim(),
+      [period === 'month' ? 'monthly_rate' : 'annual_rate']: calculatorNumber(rate, true),
     });
     content = calcResult(mode, period, result);
   } catch (err) {
