@@ -25,6 +25,14 @@ LOCAL = ZoneInfo("America/Sao_Paulo")
 AGENTS = {"expense": "Classificação de gastos", "classify": "Classificação de investimentos",
           "asset": "Pesquisa de ativos", "macro": "Economia", "risk": "Risco da carteira",
           "report": "Síntese dos especialistas"}
+INITIAL_AGENT_SETTINGS = {
+    "expense": {"model": "gpt-6-luna", "effort": "low"},
+    "classify": {"model": "gpt-6-luna", "effort": "medium"},
+    "asset": {"model": "gpt-6.1-sol", "effort": "medium"},
+    "macro": {"model": "gpt-6.1-sol", "effort": "medium"},
+    "risk": {"model": "gpt-6-astra", "effort": "high"},
+    "report": {"model": "gpt-6.1-sol", "effort": "medium"},
+}
 
 
 def model_notice(kind):
@@ -89,6 +97,10 @@ def refresh_models():
             settings = CodexSettings(id=1)
             db.add(settings)
         if models:
+            if not settings.models:
+                initial = {kind: option for kind, option in INITIAL_AGENT_SETTINGS.items()
+                           if accepts(models, **option)}
+                settings.preferences = {**initial, **(settings.preferences or {})}
             settings.models = models
         settings.refresh_after = now() + timedelta(minutes=60 if models else 5)
 

@@ -26,6 +26,8 @@ No console do contêiner **worker**, execute `codex login --device-auth` e concl
 
 Em **Mais → Agentes e pesquisas**, toque no agente para escolher seu modelo e esforço de raciocínio. A lista vem do Codex instalado no servidor e mostra os níveis aceitos por cada modelo. A escolha fica no banco e vale a partir da próxima tarefa. Se preferir que o Codex decida, selecione **Padrão do Codex**.
 
+Na primeira instalação, gastos usam `gpt-6-luna` com esforço baixo e a classificação de investimentos usa o mesmo modelo com esforço médio. Pesquisa de ativos, economia e síntese usam `gpt-6.1-sol` com esforço médio. A revisão de risco usa `gpt-6-astra` com esforço alto. Se uma combinação estiver ausente no primeiro catálogo, aquele agente começa no padrão do Codex.
+
 A agenda usa divulgações do IBGE e comunicados do Banco Central. Os especialistas analisam os dados em sequência e a conclusão conserva as evidências e o debate. O calendário antecipado do Copom está cadastrado até dezembro de 2027. Para receber avisos, configure `TELEGRAM_ENABLED=1`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` e `PUBLIC_BASE_URL`. A compra automática de renda fixa no BTG depende da confirmação de um canal oficial para a conta PF.
 
 ## Validação local

@@ -35,6 +35,23 @@ def entry(db, description, num):
                                 "amount": "92.31", "kind": "expense", "external_id": "test:" + str(num)}, "csv")
 
 
+def test_first_catalog_seeds_supported_agents_once(site, monkeypatch):
+    models = {"gpt-6-luna": {"efforts": ["low", "medium"]}, "gpt-6.1-sol": {"efforts": ["medium"]},
+              "gpt-6-astra": {"efforts": ["medium"]}}
+    monkeypatch.setattr(jobs, "model_catalog", lambda: models)
+    jobs.refresh_models()
+    assert set(jobs.INITIAL_AGENT_SETTINGS) == set(runner.SCHEMAS)
+    expected = dict(jobs.INITIAL_AGENT_SETTINGS)
+    expected.pop("risk")
+    assert site.get("/api/agents").json["preferences"] == expected
+    assert site.post("/api/agents/expense/settings", json={"model": "", "effort": ""}).status_code == 200
+    expected.pop("expense")
+    with db_session() as db:
+        db.get(jobs.CodexSettings, 1).refresh_after = jobs.now()
+    jobs.refresh_models()
+    assert site.get("/api/agents").json["preferences"] == expected
+
+
 def test_role_settings_apply_at_dispatch_and_survive_restart(site, monkeypatch):
     jobs.refresh_models()
     url = "/api/agents/expense/settings"
