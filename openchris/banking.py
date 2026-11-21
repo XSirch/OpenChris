@@ -3,6 +3,7 @@ import csv
 import hashlib
 import io
 import os
+import re
 import time
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
@@ -208,6 +209,16 @@ def _position(raw, institution, updated_at):
             "currency": raw["currencyCode"], "updated_at": raw.get("updatedAt") or updated_at, "active": active}
 
 
+def _party_document(party):
+    document = party.get("documentNumber") if isinstance(party, dict) else None
+    if not isinstance(document, dict):
+        return None
+    number = re.sub(r"[.\s/-]", "", str(document.get("value") or ""))
+    if len(number) in (11, 14) and number.isascii() and number.isdecimal() and len(set(number)) > 1:
+        return number
+    return None
+
+
 def _entry(raw, account, bills):
     amount = money(raw["amount"])
     normalized_amount = raw.get("amountInAccountCurrency")
@@ -219,12 +230,23 @@ def _entry(raw, account, bills):
     outflow = (card and amount > 0) or (not card and amount < 0)
     op = raw.get("operationType")
     provider_category = str(raw.get("category") or "")
-    cat_key = provider_category.casefold()
-    if op == "PAGAMENTO_FATURA" or cat_key in ("credit card payment", "pagamento de fatura", "pagamento de cartão de crédito"):
+    cat_key = provider_category.strip().casefold()
+    description = raw.get("description") or "Lançamento"
+    bank_bill = (not card and outflow and cat_key in ("transfer", "transfers")
+                 and " ".join(description.casefold().split()) in ("pagamento de fatura", "pagamento fatura"))
+    payment = raw.get("paymentData") or {}
+    payer = _party_document(payment.get("payer"))
+    receiver = _party_document(payment.get("receiver"))
+    own_transfer = (cat_key == "same person transfer" or cat_key.startswith("same person transfer - ")
+                    or cat_key in ("transfer between my accounts", "transferências entre contas próprias"))
+    if payer and receiver:
+        rails = ("PIX", "TED", "DOC")
+        own_transfer = payer == receiver and (own_transfer or op in rails or payment.get("paymentMethod") in rails)
+    if bank_bill or op == "PAGAMENTO_FATURA" or cat_key in ("credit card payment", "pagamento de fatura", "pagamento de cartão de crédito"):
         kind = "bill_payment"
     elif op in ("ESTORNO", "CASHBACK"):
         kind = "refund"
-    elif cat_key in ("transfer between my accounts", "transferências entre contas próprias", "investment", "investments") or op in ("RESGATE_APLIC_FINANCEIRA",):
+    elif (not card and own_transfer) or cat_key in ("investment", "investments") or op == "RESGATE_APLIC_FINANCEIRA":
         kind = "transfer"
     elif card and amount < 0:
         kind = "unknown"
@@ -235,7 +257,7 @@ def _entry(raw, account, bills):
     detail = raw.get("creditCardMetadata") or {}
     bill_id = detail.get("billId")
     booked = bills[bill_id]["due"] if bill_id in bills else str(raw["date"])[:10]
-    return {"external_id": "pluggy:" + str(raw["id"]), "description": raw.get("description") or "Lançamento",
+    return {"external_id": "pluggy:" + str(raw["id"]), "description": description,
             "merchant": (raw.get("merchant") or {}).get("name") or "", "amount": abs(amount),
             "booked_on": booked, "kind": kind, "category": provider_category if kind == "expense" else "",
             "card": card, "account_id": account["id"], "bill_id": bill_id or "",

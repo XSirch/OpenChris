@@ -119,3 +119,35 @@ def test_ambiguous_csv_match_does_not_merge_two_bank_purchases(client):
         with pytest.raises(ValueError, match="Mais de um registro"):
             banking._import_row(db, "entries", {**values, "external_id": "csv:outro"}, "csv")
         assert len(list(db.scalars(select(Entry)))) == 2
+
+
+def test_bank_replay_removes_internal_movements_from_expenses_and_income(client):
+    def party(number):
+        return {"documentNumber": {"type": "CPF", "value": number}}
+
+    internal = {"paymentMethod": "PIX", "payer": party("123.456.789-09"),
+                "receiver": party("12345678909")}
+    external = {**internal, "receiver": party("98765432100")}
+    cases = [
+        ("sent", -80, "PIX enviado", "Same person transfer", None, "expense", "transfer"),
+        ("received", 80, "PIX recebido", "Transfers", internal, "income", "transfer"),
+        ("other", -80, "PIX enviado", "Transfers", external, "expense", "expense"),
+        ("bill", -120, "Pagamento de fatura", "Transfers", None, "expense", "bill_payment"),
+        ("store", -20, "Pagamento de fatura de internet", "Transfers", None, "expense", "expense"),
+    ]
+    with db_session() as db:
+        for key, amount, description, category, payment, previous, expected in cases:
+            raw = {"id": key, "amount": amount, "description": description, "category": category,
+                   "paymentData": payment, "date": "2025-11-08"}
+            account = {"id": "destination" if amount > 0 else "origin", "type": "BANK", "currency": "BRL"}
+            row = banking._entry(raw, account, {})
+            stored = banking._import_row(db, "entries", {**row, "kind": previous}, "pluggy")
+            stored.classification_source = "codex"
+            for _ in range(2):
+                current = banking._import_row(db, "entries", row, "pluggy")
+                assert (current.id, current.kind) == (stored.id, expected)
+        assert len(db.scalars(select(Entry)).all()) == len(cases)
+
+    login(client)
+    spending = client.get("/api/finance?month=2025-11").json["spending"]
+    assert spending["total"] == "100.00"

@@ -280,12 +280,15 @@ def upsert_entry(session, data, source="manual"):
             if not isinstance(data[key], bool):
                 raise ValueError("Confira a indicação de cartão ou agendamento.")
             setattr(entry, key, data[key])
+    confirmed_bank_movement = False
     if fresh or "kind" in data or "category" in data:
         kind, category = _classification(data.get("kind", entry.kind or "unknown"),
                                          data.get("category", entry.category))
-        if fresh:
+        confirmed_bank_movement = (source == "pluggy" and kind in ("transfer", "bill_payment")
+                                   and entry.classification_source != "manual")
+        if fresh or confirmed_bank_movement:
             entry.original_kind, entry.original_category = kind, category
-        if entry.classification_source not in ("manual", "codex", "rule") or source == "manual":
+        if confirmed_bank_movement or entry.classification_source not in ("manual", "codex", "rule") or source == "manual":
             entry.kind, entry.category = kind, category
             pending = kind == "unknown" or (kind in ("expense", "refund") and category == UNCATEGORIZED)
             entry.classification_source = "pending" if pending else ("manual" if source == "manual" else "source")
@@ -293,7 +296,7 @@ def upsert_entry(session, data, source="manual"):
         if source == "manual":
             raise ValueError("O tipo escolhido contradiz a entrada ou saída registrada no extrato.")
         entry.kind, entry.category, entry.classification_source = "unknown", UNCATEGORIZED, "pending"
-    if entry.classification_source != "manual":
+    if not confirmed_bank_movement and entry.classification_source != "manual":
         with session.no_autoflush:
             rule = session.get(CorrectionRule, _rule_key(entry))
         if rule and _direction_allows(entry.bank_direction, rule.kind):
