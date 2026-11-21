@@ -1,5 +1,5 @@
 FROM node:22-bookworm-slim AS codex
-ARG CODEX_VERSION=0.163.0
+ARG CODEX_VERSION=0.171.0
 RUN npm install --global --omit=dev @openai/codex@${CODEX_VERSION}
 
 FROM python:3.13-slim-bookworm AS web

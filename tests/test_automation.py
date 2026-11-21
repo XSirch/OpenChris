@@ -52,6 +52,17 @@ def test_first_catalog_seeds_supported_agents_once(site, monkeypatch):
     assert site.get("/api/agents").json["preferences"] == expected
 
 
+def test_worker_upgrade_exposes_new_models_before_cache_expires(site, monkeypatch):
+    jobs.refresh_models()
+    option = {"model": "model-test", "effort": "high"}
+    assert site.post("/api/agents/asset/settings", json=option).status_code == 200
+    updated = {"model-test": {"efforts": ["high"]}, "gpt-6.2-sol": {"efforts": ["low", "medium"]}}
+    monkeypatch.setattr(jobs, "model_catalog", lambda: updated)
+    jobs.refresh_models(force=True)
+    state = site.get("/api/agents").json
+    assert state["models"] == updated and state["preferences"]["asset"] == option
+
+
 def test_role_settings_apply_at_dispatch_and_survive_restart(site, monkeypatch):
     jobs.refresh_models()
     url = "/api/agents/expense/settings"

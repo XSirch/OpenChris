@@ -82,10 +82,10 @@ class CodexSettings(Base):
     refresh_after: Mapped[datetime] = mapped_column(DateTime)
 
 
-def refresh_models():
+def refresh_models(*, force=False):
     with db_session() as db:
         settings = db.get(CodexSettings, 1)
-        if settings and settings.refresh_after > now():
+        if not force and settings and settings.refresh_after > now():
             return
     try:
         models = model_catalog()

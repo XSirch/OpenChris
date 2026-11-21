@@ -4,11 +4,12 @@ import time
 
 
 def worker():
-    from .automation import tick
+    from .automation import refresh_models, tick
     from .banking import sync_due
     from .db import initialize
 
     initialize()
+    refresh_models(force=True)
     log = logging.getLogger("openchris.worker")
     while True:
         for task in (sync_due, tick):
