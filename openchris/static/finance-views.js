@@ -15,8 +15,8 @@ import {
   empty,
   note,
   amountField,
-} from './ui.js?v=carbono';
-import { performancePanel, balanceTrend } from './performance.js?v=carbono';
+} from './ui.js?v=carbono-2';
+import { performancePanel, balanceTrend } from './performance.js?v=carbono-2';
 
 export const kinds = {
   unknown: 'A classificar',
@@ -561,12 +561,14 @@ export function spending(fin, state) {
         }
       </div>
       <div class="stack">
-        <section class="panel">
-          <h2 class="section-title" id="lancamentos" tabindex="-1">Lançamentos</h2>
-          <div class="actions">
-            ${op('entry', 'Novo lançamento', 'primary')}${op('import-entries', 'Importar extrato', 'secondary')}${op('finance-chat', 'Conversar com a IA', 'secondary')}
+        <section class="panel ledger-panel" aria-labelledby="lancamentos">
+          <h2 id="lancamentos" tabindex="-1">Lançamentos</h2>
+          <div class="ledger-toolbar" role="group" aria-label="Ações de lançamentos">
+            ${op('entry', 'Novo lançamento', 'primary')}
+            ${op('import-entries', 'Importar extrato', 'secondary')}
+            ${op('finance-chat', 'Conversar com a IA', 'secondary')}
+            ${s.installments?.length ? op('advance', 'Antecipar parcelas') : ''}
           </div>
-          ${s.installments?.length ? op('advance', 'Antecipar parcelas') : ''}
           <div class="entry-list">
             ${reconciliation}
             ${entries.length ? entries.map((e) => entry(e, s.advances)).join('') : empty('Os lançamentos deste mês aparecerão aqui.')}

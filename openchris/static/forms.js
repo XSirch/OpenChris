@@ -12,8 +12,8 @@ import {
   buttonSubmit,
   form,
   note,
-} from './ui.js?v=carbono';
-import { kinds, matchingCharges } from './finance-views.js?v=carbono';
+} from './ui.js?v=carbono-2';
+import { kinds, matchingCharges } from './finance-views.js?v=carbono-2';
 
 const baseClasses = ['Renda fixa', 'Ações', 'Fundos imobiliários', 'ETFs', 'Exterior'];
 const options = (labels) => Object.fromEntries(labels.map((x) => [x, x]));

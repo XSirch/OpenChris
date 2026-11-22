@@ -14,7 +14,7 @@ import {
   empty,
   note,
   row,
-} from './ui.js?v=carbono';
+} from './ui.js?v=carbono-2';
 
 const calculatorModes = {
   compound: 'Juros compostos',

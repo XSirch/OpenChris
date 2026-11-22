@@ -1,7 +1,7 @@
-import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono';
-import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono';
-import { mountPerformance } from './performance.js?v=carbono';
-import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono';
+import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono-2';
+import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono-2';
+import { mountPerformance } from './performance.js?v=carbono-2';
+import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono-2';
 import {
   advanceForm,
   linkChargeForm,
@@ -13,7 +13,7 @@ import {
   positionForm,
   profileForm,
   targetsForm,
-} from './forms.js?v=carbono';
+} from './forms.js?v=carbono-2';
 
 const titles = {
   hoje: 'Hoje',
