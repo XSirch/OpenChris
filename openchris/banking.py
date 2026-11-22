@@ -386,7 +386,8 @@ def sync_item(item_id):
     investment_rows = list(_records("/investments", {"itemId": item_id})) if reads_positions else []
     name, investment_institution = _connection_institutions(connector.get("name"), account_rows, investment_rows)
     try:
-        observation = investment_observation(item_id, investment_rows, _records) if investment_rows else None
+        observation = investment_observation(item_id, investment_rows, _records,
+                                             source_updated_at=meta.get("lastUpdatedAt")) if investment_rows else None
     except (ValueError, TypeError, InvalidOperation):
         observation = None  # An unusable observation must not interrupt regular import validation.
     with db_session() as db:

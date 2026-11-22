@@ -5,9 +5,10 @@ import json
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 
 import requests
-from sqlalchemy import Date, DateTime, JSON, String, select
+from sqlalchemy import Date, DateTime, JSON, String, false, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base, db_session
@@ -16,6 +17,7 @@ from .finance import ZERO, _cash, today_local
 CDI_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados"
 IPCA_URL = "https://apisidra.ibge.gov.br/values/t/1737/n1/1/v/2266/p/"
 B3_URL = "https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/GetPortfolioDay/"
+LOCAL = ZoneInfo("America/Sao_Paulo")
 SOURCES = {
     "cdi": CDI_URL + "?formato=json",
     "ipca": "https://www.ibge.gov.br/estatisticas/economicas/precos-e-custos/9256-ipca.html",
@@ -29,6 +31,7 @@ class InvestmentBalance(Base):
     day: Mapped[date] = mapped_column(Date, primary_key=True)
     name: Mapped[str]
     valued_on: Mapped[date | None] = mapped_column(Date)
+    estimated: Mapped[bool] = mapped_column(default=False, server_default=false())
     positions: Mapped[dict] = mapped_column(JSON)
     flow_start: Mapped[date | None] = mapped_column(Date)
     movements: Mapped[list] = mapped_column(JSON, default=list)
@@ -89,7 +92,12 @@ def _investment_flows(positions, previous, start, end, read):
     return list(movements.values())
 
 
-def investment_observation(item_id, raw_rows, read, today=None):
+def _snapshot_day(raw):
+    stamp = datetime.fromisoformat(raw)
+    return (stamp if stamp.tzinfo else stamp.replace(tzinfo=timezone.utc)).astimezone(LOCAL).date()
+
+
+def investment_observation(item_id, raw_rows, read, today=None, source_updated_at=None):
     """Read movements only when a new common valuation date is available."""
     today = today or today_local()
     brl = [row for row in raw_rows if row.get("currencyCode") == "BRL"]
@@ -103,9 +111,20 @@ def investment_observation(item_id, raw_rows, read, today=None):
         references = {_day(row["date"]) if row.get("date") else None for row in active or brl}
     except (ValueError, TypeError):
         references = set()
-    valued_on = next(iter(references)) if len(references) == 1 and None not in references else None
-    if valued_on and valued_on > today:
+    first_fresh = today - timedelta(days=4)
+    valued_on = next(iter(references)) if len(references) == 1 else None
+    estimated = False
+    if not valued_on or not first_fresh <= valued_on <= today:
         valued_on = None
+        try:
+            reported_on = _snapshot_day(source_updated_at)
+            updates = [_snapshot_day(row["updatedAt"]) for row in active or brl]
+            if first_fresh <= reported_on <= today and all(
+                first_fresh <= updated <= reported_on for updated in updates
+            ):
+                valued_on, estimated = reported_on, True
+        except (ValueError, TypeError, KeyError):
+            pass
     with db_session() as db:
         current = db.get(InvestmentBalance, (item_id, today))
         if current and current.positions == positions and current.valued_on == valued_on:
@@ -120,7 +139,7 @@ def investment_observation(item_id, raw_rows, read, today=None):
             flow_start = previous.valued_on
         except (requests.RequestException, ValueError, InvalidOperation, KeyError, TypeError):
             pass
-    return dict(connection_id=item_id, day=today, valued_on=valued_on, positions=positions,
+    return dict(connection_id=item_id, day=today, valued_on=valued_on, estimated=estimated, positions=positions,
                 flow_start=flow_start, movements=movements)
 
 
@@ -296,6 +315,7 @@ def portfolio_performance(db, today=None):
     partial = bool(connections.keys() - scope.keys()) or manual
     data = {
         "year": today.year, "start": base, "end": end, "partial": partial,
+        "estimated": any(row.estimated for day in chain for row in valuations[day].values()),
         "stale": bool(end and (max(observations) > end + timedelta(days=1)
                                or any(connections[key].status != "Atualizada" for key in scope))),
         "institutions": sorted({connections[key].name or "Instituição não identificada" for key in scope}),

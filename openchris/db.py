@@ -45,6 +45,8 @@ def initialize():
         Base.metadata.create_all(conn)
         if "bank_direction" not in {column["name"] for column in inspect(conn).get_columns("entries")}:
             conn.exec_driver_sql("ALTER TABLE entries ADD COLUMN bank_direction VARCHAR(7)")
+        if "estimated" not in {column["name"] for column in inspect(conn).get_columns("investment_balances")}:
+            conn.exec_driver_sql("ALTER TABLE investment_balances ADD COLUMN estimated BOOLEAN NOT NULL DEFAULT FALSE")
         entry = finance.Entry
         candidates = select(entry).where(
             entry.active.is_(True), entry.advanced_by.is_(None), entry.source == "pluggy", entry.card.is_(True),

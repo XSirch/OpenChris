@@ -129,6 +129,7 @@ export function mountPerformance(root, data) {
       <div class="performance-total"><p>${subtitle}</p>
         ${wallet ? `<strong class="numeric">${percent(wallet.percent)}</strong><small>${through}</small>` : ''}</div>
       ${wallet ? coverage : note('A comparação da carteira começa com dois saldos e as movimentações conciliadas entre eles.') + coverage}
+      ${data.estimated ? note('Rentabilidade estimada com os saldos da última atualização de cada instituição. As posições podem ter datas de avaliação diferentes.') : ''}
       ${data.stale ? note('Último período conciliado. Há leituras mais recentes ainda sem conciliação.') : ''}
       ${chart}
       <div class="performance-references">

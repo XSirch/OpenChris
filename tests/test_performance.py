@@ -74,6 +74,20 @@ def test_movements_must_explain_an_asset_entering_or_leaving():
                           lambda *_: [transaction("buy", "BUY", "2026-01-01", "100")])
 
 
+def test_fresh_institution_snapshot_with_mixed_valuation_dates_is_flagged_as_estimated(database):
+    rows = [
+        dict(id="one", currencyCode="BRL", balance="100", date="2026-11-19", updatedAt="2026-11-22T00:22:00Z"),
+        dict(id="two", currencyCode="BRL", balance="50", date="2026-11-21", updatedAt="2026-11-22T00:24:00Z"),
+    ]
+    today = date(2026, 11, 22)
+    snapshot = investment_observation("bank", rows, None, today, source_updated_at="2026-11-22T00:25:00Z")
+    assert snapshot["valued_on"] == date(2026, 11, 21)
+    assert snapshot["estimated"]
+    stale = investment_observation("bank", rows, None, date(2026, 11, 30),
+                                   source_updated_at="2026-11-22T00:25:00Z")
+    assert stale["valued_on"] is None
+
+
 def test_ipca_only_uses_published_complete_months():
     values = {"2025-12": "100", "2026-01": "102", "2026-02": "105"}
     assert _reference("ipca", values, date(2025, 12, 31), date(2026, 2, 18)) == (
