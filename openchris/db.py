@@ -2,7 +2,7 @@ import os
 from contextlib import contextmanager
 from functools import lru_cache
 
-from sqlalchemy import URL, create_engine, inspect
+from sqlalchemy import URL, create_engine, func, inspect, select
 from sqlalchemy.orm import DeclarativeBase, Session
 
 
@@ -45,3 +45,13 @@ def initialize():
         Base.metadata.create_all(conn)
         if "bank_direction" not in {column["name"] for column in inspect(conn).get_columns("entries")}:
             conn.exec_driver_sql("ALTER TABLE entries ADD COLUMN bank_direction VARCHAR(7)")
+        entry = finance.Entry
+        candidates = select(entry).where(
+            entry.active.is_(True), entry.advanced_by.is_(None), entry.source == "pluggy", entry.card.is_(True),
+            entry.bank_direction == "inflow", entry.kind == "unknown", entry.classification_source == "pending",
+            func.lower(entry.original_description).contains("antecipa"),
+        ).order_by(entry.id).with_for_update()
+        with Session(bind=conn) as session:
+            for row in session.scalars(candidates):
+                finance.apply_card_installment_discount(row)
+            session.flush()

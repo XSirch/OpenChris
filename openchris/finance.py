@@ -23,6 +23,7 @@ MONEY = Numeric(16, 2)
 UNKNOWN_CLASS = "A classificar"
 UNCATEGORIZED = "Sem categoria"
 INVESTMENT_INCOME = "Rendimentos de investimentos"
+INSTALLMENT_DISCOUNT = "Desconto de antecipação"
 KINDS = {"expense", "income", "transfer", "refund", "bill_payment", "unknown"}
 CLASSES = ("Renda fixa", "Ações", "Fundos imobiliários", "Exterior")
 
@@ -250,6 +251,14 @@ def _direction_allows(direction, kind):
                 or (direction == "outflow" and kind in ("income", "refund")))
 
 
+def apply_card_installment_discount(entry):
+    if (entry.active and not entry.advanced_by and entry.source == "pluggy" and entry.card
+            and entry.bank_direction == "inflow" and entry.kind == "unknown" and entry.classification_source == "pending"
+            and " ".join(entry.original_description.casefold().split()) in (
+                "desc antecipa parcelas", "desconto por antecipação de parcelas")):
+        entry.kind, entry.category, entry.classification_source = "refund", INSTALLMENT_DISCOUNT, "source"
+
+
 def upsert_entry(session, data, source="manual"):
     entry = _row(session, Entry, data, source)
     fresh = entry.id is None
@@ -303,6 +312,8 @@ def upsert_entry(session, data, source="manual"):
             rule = session.get(CorrectionRule, _rule_key(entry))
         if rule and _direction_allows(entry.bank_direction, rule.kind):
             entry.kind, entry.category, entry.classification_source = rule.kind, rule.category, "rule"
+    if source == "pluggy":
+        apply_card_installment_discount(entry)
     session.flush()
     return entry
 

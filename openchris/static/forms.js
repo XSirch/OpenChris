@@ -80,9 +80,11 @@ export function entryForm(existing) {
     'Salvar lançamento',
   );
 }
-export function correctForm(e) {
+export function correctForm({ entry: e, notice, can_retry: canRetry }) {
   return (
     `<p class="dialog-copy">${esc(e.description)} · ${money(e.amount)}</p>` +
+    (notice ? `<p class="note" data-classification-notice role="status">${esc(notice)}</p>` : '') +
+    (canRetry ? action('retry-classification', 'Pedir nova análise', 'text-btn', `data-id="${esc(e.id)}"`) : '') +
     form(
       'correct',
       `<input type="hidden" name="entry_id" value="${esc(e.id)}">` +

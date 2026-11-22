@@ -205,6 +205,45 @@ def test_batch_preserves_manual_changes_and_pending(site, monkeypatch):
     assert site.get("/api/agents").json["enabled"] is True
 
 
+def test_inconclusive_classification_keeps_reason_and_can_be_requeued(site, monkeypatch):
+    with db_session() as db:
+        for i in range(3):
+            row = finance.upsert_entry(db, {"external_id": f"pending:{i}", "description": f"Crédito {i}",
+                                          "bank_direction": "inflow", "amount": 20,
+                                          "date": jobs.day().isoformat()}, "pluggy")
+            assert row.classification_source == "pending"
+        entries = list(db.scalars(select(finance.Entry).order_by(finance.Entry.id)))
+        jobs.plan(db)
+
+    def classify(kind, inputs, **kwargs):
+        suggestions = [("unknown", "", False), ("income", "", True), ("expense", "Mercado", True)]
+        return {"items": [dict(id=data["id"], kind=kind, category=category, confident=confident)
+                          for data, (kind, category, confident) in zip(inputs, suggestions, strict=True)]}
+
+    monkeypatch.setattr(jobs, "codex_result", classify)
+    assert jobs.run_one()
+    urls = [f"/api/entries/{row.id}/classification" for row in entries]
+    for url, fragment in zip(urls, ("segurança", "categoria", "extrato"), strict=True):
+        review = site.get(url).json
+        assert review["can_retry"] and fragment in review["notice"]
+        assert review["entry"]["kind"] == "unknown"
+    with db_session() as db:
+        jobs.plan(db)
+        assert [row.state for row in db.scalars(select(jobs.Job).order_by(jobs.Job.id))] == ["done"] * 3
+
+    assert site.post(urls[0], json={}).status_code == 202
+    assert site.post(urls[0], json={}).status_code == 409
+    assert not site.get(urls[0]).json["can_retry"]
+    monkeypatch.setattr(jobs, "codex_result", lambda kind, data: {"items": [
+        dict(id=data[0]["id"], kind="refund", category="Devoluções", confident=True)]})
+    assert jobs.run_one()
+    review = site.get(urls[0]).json
+    assert (review["entry"]["kind"], review["notice"], review["can_retry"]) == ("refund", "", False)
+    with db_session() as db:
+        old_job = db.scalar(select(jobs.Job).order_by(jobs.Job.id).limit(1))
+        assert old_job.attempts == 2
+
+
 def test_pause_retry_and_restart(site, monkeypatch):
     with db_session() as db:
         entry(db, "Teste", 1)

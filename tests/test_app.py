@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from openchris import banking
-from openchris.db import db_session
+from openchris.db import db_session, initialize
 from openchris.finance import Entry, Position
 from openchris.web import create_app
 
@@ -171,6 +171,36 @@ def test_bank_replay_recognizes_broker_yield_and_preserves_manual_classification
 
     for change in ({"amount": -5}, {"description": "Entrada COR RENDIMENTO"}, {"description": "Resgate de investimento"}):
         assert banking._entry({**raw, **change}, account, {})["kind"] == "transfer"
-    card_credit = banking._entry({**raw, "amount": -2.17, "category": "", "description": "Desc Antecipa Parcelas"},
-                                 {**account, "type": "CREDIT"}, {})
-    assert (card_credit["kind"], card_credit["bank_direction"]) == ("unknown", "inflow")
+
+
+def test_card_installment_discounts_reduce_spending_and_update_prior_imports(client):
+    card = {"id": "card", "type": "CREDIT", "currency": "BRL"}
+    raw = {"id": "credit-1", "amount": -2.17, "category": "", "description": "Desc Antecipa Parcelas",
+           "date": "2025-11-08"}
+    with db_session() as db:
+        current = banking._import_row(db, "entries", banking._entry(raw, card, {}), "pluggy")
+        assert (current.kind, current.category, current.bank_direction, current.original_kind) == (
+            "refund", "Desconto de antecipação", "inflow", "unknown")
+        for key, account, changes in (
+            ("credit-2", card, {"description": " DESC   ANTECIPA PARCELAS  "}),
+            ("changed-manually", card, {}),
+            ("debit", card, {"amount": 2.17}),
+            ("credit-without-card", {**card, "type": "BANK"}, {"amount": 2.17}),
+        ):
+            row = banking._import_row(db, "entries", banking._entry({**raw, **changes, "id": key}, account, {}), "pluggy")
+            row.kind, row.category, row.classification_source = (
+                ("transfer", "Revisada", "manual") if key == "changed-manually" else ("unknown", "Sem categoria", "pending"))
+
+    initialize()
+    initialize()
+    with db_session() as db:
+        entries = {e.external_id: e for e in db.scalars(select(Entry))}
+        assert entries["pluggy:credit-2"].kind == "refund"
+        assert entries["pluggy:changed-manually"].kind == "transfer"
+        assert entries["pluggy:debit"].kind == entries["pluggy:credit-without-card"].kind == "unknown"
+        imported = banking._import_row(db, "entries", banking._entry(raw, card, {}), "pluggy")
+        assert imported.id == entries["pluggy:credit-1"].id
+
+    login(client)
+    spending = client.get("/api/finance?month=2025-11").json["spending"]
+    assert spending["total"] == "-4.34"

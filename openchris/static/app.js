@@ -327,6 +327,31 @@ async function openAction(key, node) {
     dialog('Novo lançamento', entryForm());
     return;
   }
+  if (key === 'correct' || key === 'retry-classification') {
+    const path = `/api/entries/${encodeURIComponent(id)}/classification`;
+    if (key === 'correct') {
+      const d = loadingDialog('Corrigir lançamento');
+      const review = await api(path);
+      if (dialogId === d && dlg.open) body.innerHTML = correctForm(review);
+      return;
+    }
+    const d = dialogId;
+    node.disabled = true;
+    dialogError('');
+    try {
+      const { notice } = await api(path, {});
+      if (dialogId === d && dlg.open) {
+        body.querySelector('[data-classification-notice]').textContent = notice;
+        node.remove();
+        body.querySelector('[name="kind"]').focus();
+      }
+    } catch (error) {
+      if (dialogId === d && dlg.open) dialogError(error.message);
+      else notify(error.message);
+      node.disabled = false;
+    }
+    return;
+  }
   const labels = {
     perfil: 'Perfil financeiro',
     targets: 'Metas por classe',
@@ -337,7 +362,6 @@ async function openAction(key, node) {
     'edit-position': 'Editar posição',
     'edit-entry': 'Editar lançamento',
     'link-charge': 'Vincular cobrança da fatura',
-    correct: 'Corrigir lançamento',
   };
   if (!Object.hasOwn(labels, key)) return;
   const d = loadingDialog(labels[key]),
@@ -361,7 +385,6 @@ async function openAction(key, node) {
         f.spending.entries,
       ),
     'edit-entry': () => entryForm(f.spending.entries.find((e) => String(e.id) === id)),
-    correct: () => correctForm(f.spending.entries.find((e) => String(e.id) === id)),
   };
   body.innerHTML = content[key]();
 }

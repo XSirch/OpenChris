@@ -325,7 +325,7 @@ def prepare(db, jobs):
         current = []
         for row in jobs:
             entry = db.get(finance.Entry, row.payload["id"])
-            if entry and entry.active and entry.classification_source == "pending" and expense_input(entry) == row.payload:
+            if entry and entry.active and not entry.advanced_by and entry.classification_source == "pending" and expense_input(entry) == row.payload:
                 current.append(row)
             else:
                 finish(row)
@@ -389,10 +389,21 @@ def save_result(db, jobs, context, out, verified):
             raise ValueError("O lote contém identificadores incompatíveis.")
         for row in jobs:
             item = answers[row.payload["id"]]
-            entry = db.get(finance.Entry, row.payload["id"], with_for_update=True)
-            if (entry and entry.active and expense_input(entry) == row.payload and entry.classification_source == "pending"
-                    and item["confident"] and item["kind"] != "unknown" and 0 < len(item["category"].strip()) <= 100):
-                finance.classify_entry(db, entry.id, item["kind"], item["category"])
+            entry = db.get(finance.Entry, row.payload["id"], with_for_update=True, populate_existing=True)
+            if not entry or not entry.active or entry.advanced_by or entry.classification_source != "pending" or expense_input(entry) != row.payload:
+                finish(row)
+                continue
+            category = item["category"].strip()
+            if not item["confident"] or item["kind"] == "unknown":
+                notice = "A IA não identificou o tipo do lançamento com segurança."
+            elif not 0 < len(category) <= 100 or (item["kind"] in ("expense", "refund") and category == finance.UNCATEGORIZED):
+                notice = "A IA não indicou uma categoria válida."
+            elif not finance.classify_entry(db, entry.id, item["kind"], category):
+                notice = "O tipo sugerido pela IA contradiz o extrato."
+            else:
+                notice = ""
+            finish(row, notice)
+        return
     elif job.kind == "classify":
         pos = db.get(finance.Position, data["id"], with_for_update=True)
         if (pos and pos.active and pos.asset_class == finance.UNKNOWN_CLASS and pos.name[:180] == data["name"]
@@ -531,6 +542,36 @@ def active_codex_notice(control):
     if control and control.until and control.until > now() and control.notice != LEGACY_DAILY_LIMIT_NOTICE:
         return control.notice
     return ""
+
+
+@bp.route("/api/entries/<int:entry_id>/classification", methods=["GET", "POST"])
+def expense_classification(entry_id):
+    retry = request.method == "POST"
+    with db_session() as db:
+        entry = db.get(finance.Entry, entry_id, with_for_update=retry) if 0 < entry_id <= 2147483647 else None
+        if not entry or not entry.active:
+            return jsonify(error="O lançamento não foi encontrado."), 404
+
+        awaiting = entry.classification_source == "pending" and not entry.advanced_by
+        job = db.scalar(select(Job).where(Job.key == "expense:" + digest(expense_input(entry)))) if awaiting else None
+        can_retry = bool(job and job.state == "done")
+        if retry:
+            if not can_retry:
+                return jsonify(error="Este lançamento não está disponível para uma nova análise."), 409
+            updated = db.execute(update(Job).where(Job.id == job.id, Job.state == "done")
+                                 .values(state="pending", ready_at=now(), finished_at=None, notice=""))
+            if not updated.rowcount:
+                return jsonify(error="A nova análise já está na fila."), 409
+            return jsonify(notice="Nova análise na fila."), 202
+
+        notice = ""
+        if can_retry:
+            notice = job.notice or "A análise anterior terminou sem uma categoria definida."
+        elif job and job.state == "running":
+            notice = "A IA está analisando o lançamento."
+        elif awaiting:
+            notice = (job.notice if job else "") or "Aguardando classificação automática."
+        return jsonify(entry=finance.entry_data(entry), notice=notice, can_retry=can_retry)
 
 
 @bp.route("/api/finance-chat", methods=["GET", "POST"])

@@ -285,12 +285,13 @@ function entry(e, advances) {
   const outflow = e.bank_direction === 'outflow';
   const sign = credit ? '+' : debit ? '−' : inflow ? '+' : outflow ? '−' : '';
   const direction = credit || debit ? '' : inflow ? 'Entrada no extrato' : outflow ? 'Saída no extrato' : '';
+  const kind = e.kind === 'refund' && e.category === 'Desconto de antecipação' ? 'Crédito na fatura' : kinds[e.kind];
   return /* HTML */ `<article class="entry">
     <div class="split">
       <h3>${esc(e.description)}</h3>
       <strong class="numeric ${tone}">${sign}${money(e.amount)}</strong>
     </div>
-    ${note([date(e.date, { day: 'numeric', month: 'short' }), esc(kinds[e.kind]), direction, e.category !== kinds[e.kind] ? esc(e.category) : '', e.installment_group ? 'Parcela ' + esc(e.installment_index || '') : '', e.advanced_by ? 'Antecipada' : ''].filter(Boolean).join(' · '))}
+    ${note([date(e.date, { day: 'numeric', month: 'short' }), esc(kind), direction, e.category !== kind ? esc(e.category) : '', e.installment_group ? 'Parcela ' + esc(e.installment_index || '') : '', e.advanced_by ? 'Antecipada' : ''].filter(Boolean).join(' · '))}
     <div class="actions">
       ${editableEntry(e, advances) ? action('edit-entry', 'Editar lançamento', 'text-btn', `data-id="${esc(e.id)}"`) : ''}
       ${action('correct', 'Corrigir classificação', 'text-btn', `data-id="${esc(e.id)}"`)}
