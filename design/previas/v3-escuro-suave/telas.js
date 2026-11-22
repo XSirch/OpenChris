@@ -255,7 +255,10 @@ const telas = (() => {
     return voltar('mais', 'Mais') + titulo('Sistema visual', 'Guia da prévia do OpenChris') + `<div class="two-col">
       <div class="stack"><section class="panel"><h2>Paleta</h2><div class="swatches">${cores.map(([nome, cor]) =>
         `<div class="swatch"><span class="swatch-sample" style="background:${cor}"></span><strong>${nome}</strong><span class="sub">${cor}</span></div>`).join('')}</div>
-        <div class="material-sample titanio"><strong>Titânio escovado</strong><span>Cartão de patrimônio</span></div></section>
+        <div class="material-samples">
+          <div class="material-sample titanio"><strong>Titânio escovado</strong><span>Cartão de patrimônio</span></div>
+          <div class="material-sample material-carbono"><strong>Fibra de carbono</strong><span class="muted">Fundo das telas</span></div>
+        </div></section>
       <section class="panel"><h2>Source Sans 3</h2><div class="type-demo">${valorGrande(m.patrimonio)}<span class="sub">Patrimônio · peso 500</span>
         <h3>Lançamentos</h3><p>O gasto do mês reúne as compras até o dia 15.</p><span class="sub">15 de novembro · Texto de apoio</span></div></section></div>
       <div class="stack"><section class="panel"><h2>Ações e estados</h2><div class="button-line">
