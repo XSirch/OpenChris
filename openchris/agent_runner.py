@@ -45,6 +45,7 @@ KINDS = ("expense", "income", "transfer", "refund", "bill_payment", "unknown")
 FIELDS = ("issuer", "asset_class", "indexer", "maturity")
 FACT = choices(*FIELDS)
 SCHEMAS = {
+    "chat": obj(answer=TEXT),
     "expense": obj(items=rows(obj(id={"type": "integer"}, kind=choices(*KINDS), category=TEXT,
                                   confident={"type": "boolean"}))),
     "classify": obj(asset_class=TEXT, evidence=TEXT, confident={"type": "boolean"}),
@@ -56,6 +57,9 @@ SCHEMAS = {
 }
 
 INSTRUCTIONS = {
+    "chat": "Responda à última pergunta usando o resumo financeiro e a conversa anterior do JSON. "
+            "Identifique o mês, diferencie dados confirmados de estimativas e diga quando faltam dados. "
+            "Não invente lançamentos, taxas, rendimentos ou saldos. Retorne uma resposta em texto simples.",
     "expense": "Classifique cada ID uma vez. Use categoria curta em português. Em caso de dúvida mantenha confident=false. "
                "bank_direction indica entrada (inflow) ou saída (outflow) confirmada pelo banco. Uma entrada não é despesa "
                "e uma saída não é receita nem estorno. Uma transferência pode ter qualquer direção.",

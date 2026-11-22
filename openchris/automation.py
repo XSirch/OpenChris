@@ -7,6 +7,7 @@ import re
 import subprocess
 from datetime import date, datetime, time, timedelta, timezone
 from urllib.parse import urlsplit
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 import requests
@@ -24,8 +25,9 @@ bp = Blueprint("automation", __name__)
 LOCAL = ZoneInfo("America/Sao_Paulo")
 AGENTS = {"expense": "Classificação de gastos", "classify": "Classificação de investimentos",
           "asset": "Pesquisa de ativos", "macro": "Economia", "risk": "Risco da carteira",
-          "report": "Síntese dos especialistas"}
+          "report": "Síntese dos especialistas", "chat": "Chat financeiro"}
 INITIAL_AGENT_SETTINGS = {
+    "chat": {"model": "gpt-6.1-sol", "effort": "medium"},
     "expense": {"model": "gpt-6-luna", "effort": "low"},
     "classify": {"model": "gpt-6-luna", "effort": "medium"},
     "asset": {"model": "gpt-6.1-sol", "effort": "medium"},
@@ -302,6 +304,22 @@ def valid_event(db, payload):
 
 def prepare(db, jobs):
     job, data = jobs[0], jobs[0].payload
+    if job.kind == "chat":
+        from .banking import bank_snapshot
+
+        bank = bank_snapshot(db)
+        view = finance.dashboard(db, month=data["month"], today=day(), bank=bank)
+        spending = view["spending"]
+        return {"pergunta": data["question"], "conversa_anterior": data["previous"],
+                "mes": view["month"], "dados_ate": spending["cutoff"],
+                "receitas_classificadas": str(sum(finance.money(e["amount"]) for e in spending["entries"]
+                                                  if e["kind"] == "income")),
+                "gastos": {k: spending[k] for k in ("total", "average", "history", "pending")},
+                "categorias": [{k: category[k] for k in ("category", "total", "average")}
+                               for category in spending["categories"][:50]],
+                "carteira": view["portfolio"]["classes"],
+                "aporte_atual": {k: view["contribution"][k] for k in
+                                  ("balance", "available", "shortfall", "confirmed", "warnings", "allocation")}}
     if job.kind == "expense":
         current = []
         for row in jobs:
@@ -360,7 +378,11 @@ def send_telegram(data):
 
 def save_result(db, jobs, context, out, verified):
     job, data = jobs[0], jobs[0].payload
-    if job.kind == "expense":
+    if job.kind == "chat":
+        if not out["answer"].strip():
+            raise ValueError("Resposta vazia.")
+        job.payload = {"question": data["question"], "month": data["month"], "answer": out["answer"]}
+    elif job.kind == "expense":
         answers = {item["id"]: item for item in out["items"]}
         if len(answers) != len(out["items"]) or set(answers) != {r.payload["id"] for r in jobs}:
             raise ValueError("O lote contém identificadores incompatíveis.")
@@ -486,6 +508,9 @@ def run_one():
                               if kind == "telegram" else "A tarefa não terminou. Outra tentativa está agendada.")
                 if isinstance(error, ModelUnavailable):
                     job.notice, job.ready_at = model_notice(kind), now() + timedelta(hours=1)
+                if kind == "chat":
+                    job.state = "failed"
+                    job.notice = str(error) if pause else "A IA não concluiu a resposta. Envie a pergunta novamente."
                 if pause and kind != "telegram":
                     control = runtime(db, "codex")
                     control.notice, control.until = job.notice, job.ready_at
@@ -504,6 +529,38 @@ def tick():
     for _ in range(8):
         if not run_one():
             break
+
+
+@bp.route("/api/finance-chat", methods=["GET", "POST"])
+def finance_chat():
+    with db_session() as db:
+        if request.method == "POST":
+            data = request.get_json(silent=True)
+            question = data.get("question") if isinstance(data, dict) else None
+            month = data.get("month") if isinstance(data, dict) else None
+            if not isinstance(question, str) or not 1 <= len(question.strip()) <= 1000:
+                return jsonify(error="Digite uma pergunta de até 1.000 caracteres."), 400
+            if not isinstance(month, str) or not re.fullmatch(r"20\d{2}-(0[1-9]|1[0-2])", month):
+                return jsonify(error="Escolha um mês válido na aba Gastos."), 400
+            if db.bind.dialect.name == "postgresql":
+                db.execute(select(func.pg_advisory_xact_lock(73148612)))
+            worker = db.get(Runtime, "worker")
+            if not worker or not worker.count or not worker.checked_at or now() - worker.checked_at > timedelta(minutes=15):
+                return jsonify(error="O worker da IA está indisponível no momento."), 503
+            if db.scalar(select(Job.id).where(Job.kind == "chat", Job.state.in_(("pending", "running", "retry"))).limit(1)):
+                return jsonify(error="Aguarde a resposta da pergunta anterior."), 409
+            previous = list(db.scalars(select(Job).where(Job.kind == "chat", Job.state == "done")
+                                       .order_by(Job.id.desc()).limit(3)))
+            db.add(Job(key="chat:" + uuid4().hex, kind="chat", priority=1,
+                       payload={"question": question.strip(), "month": month,
+                                "previous": [row.payload for row in reversed(previous)]}))
+            return jsonify(status="pending"), 202
+        control = db.get(Runtime, "codex")
+        jobs = list(db.scalars(select(Job).where(Job.kind == "chat").order_by(Job.id.desc()).limit(8)))
+        return jsonify(messages=[{"question": job.payload["question"], "month": job.payload["month"],
+                                  "answer": job.payload.get("answer"), "state": job.state, "notice": job.notice}
+                                 for job in reversed(jobs)],
+                       waiting=control.notice if control and control.until and control.until > now() else "")
 
 
 @bp.get("/api/economy")

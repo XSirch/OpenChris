@@ -278,12 +278,15 @@ export function editableEntry(e, advances = []) {
   return e.source === 'manual' && !e.advanced_by && !advances.some((advance) => advance.id === e.id);
 }
 function entry(e, advances) {
+  const credit = e.kind === 'income' || e.kind === 'refund';
+  const tone = credit ? 'positive' : e.kind === 'expense' ? 'expense-value' : '';
+  const sign = credit ? '+' : e.kind === 'expense' ? '−' : '';
   return /* HTML */ `<article class="entry">
     <div class="split">
       <h3>${esc(e.description)}</h3>
-      <strong class="numeric">${money(e.amount)}</strong>
+      <strong class="numeric ${tone}">${sign}${money(e.amount)}</strong>
     </div>
-    ${note([date(e.date, { day: 'numeric', month: 'short' }), esc(e.category || kinds[e.kind]), e.installment_group ? 'Parcela ' + esc(e.installment_index || '') : '', e.advanced_by ? 'Antecipada' : ''].filter(Boolean).join(' · '))}
+    ${note([date(e.date, { day: 'numeric', month: 'short' }), esc(kinds[e.kind]), e.category !== kinds[e.kind] ? esc(e.category) : '', e.installment_group ? 'Parcela ' + esc(e.installment_index || '') : '', e.advanced_by ? 'Antecipada' : ''].filter(Boolean).join(' · '))}
     <div class="actions">
       ${editableEntry(e, advances) ? action('edit-entry', 'Editar lançamento', 'text-btn', `data-id="${esc(e.id)}"`) : ''}
       ${action('correct', 'Corrigir classificação', 'text-btn', `data-id="${esc(e.id)}"`)}
@@ -378,7 +381,7 @@ export function spending(fin, state) {
         <section>
           ${sectionTitle('Lançamentos')}
           <div class="actions">
-            ${op('entry', 'Novo lançamento', 'primary')}${op('import-entries', 'Importar extrato', 'secondary')}
+            ${op('entry', 'Novo lançamento', 'primary')}${op('import-entries', 'Importar extrato', 'secondary')}${op('finance-chat', 'Conversar com a IA', 'secondary')}
           </div>
           ${s.installments?.length ? op('advance', 'Antecipar parcelas') : ''}
         </section>

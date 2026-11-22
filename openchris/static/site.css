@@ -67,6 +67,7 @@ main:focus { outline: none; }
 .accent { color: var(--accent); }
 .warm,.error { color: var(--warm); }
 .positive { color: var(--green); }
+.expense-value { color: #ff9a9f; }
 .metrics,.rows,.details-list,.tools-list { border-top: 1px solid var(--line); }
 .metric-group .metrics,.metric-group .bar-chart { margin-top: 16px; }
 .row,.row-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 0; border-bottom: 1px solid var(--line); }
@@ -191,6 +192,10 @@ dialog::backdrop { background: rgb(1 6 13 / 76%); }
 .dialog-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: -8px -6px 12px 0; }
 .dialog-head h2 { font-size: 1.45rem; }
 .dialog-copy { color: var(--muted); margin-bottom: 14px; }
+.finance-chat:not(:empty) { margin-bottom: 16px; }
+.chat-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 4px 10px; }
+[data-form="finance-chat"] textarea { width: 100%; resize: vertical; font: inherit; color: var(--text); background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+[data-form="finance-chat"] button { margin-top: 10px; }
 body:has(dialog[open]) { overflow: hidden; }
 #notice:not(:empty) { position: fixed; z-index: 5; bottom: calc(73px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: #263a50; border: 1px solid #53667b; padding: 9px 15px; border-radius: 6px; max-width: min(90vw, 480px); width: max-content; }
 .sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

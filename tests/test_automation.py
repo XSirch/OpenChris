@@ -35,6 +35,28 @@ def entry(db, description, num):
                                 "amount": "92.31", "kind": "expense", "external_id": "test:" + str(num)}, "csv")
 
 
+def test_finance_chat_uses_worker_and_financial_context(site, monkeypatch):
+    month = jobs.day().strftime("%Y-%m")
+    question = {"question": "Quanto gastei?", "month": month}
+    assert site.post("/api/finance-chat", json=question).status_code == 503
+    with db_session() as db:
+        worker = jobs.runtime(db, "worker")
+        worker.count, worker.checked_at = 1, jobs.now()
+        entry(db, "Compra de teste", 1)
+    assert site.post("/api/finance-chat", json=question).status_code == 202
+    assert site.post("/api/finance-chat", json=question).status_code == 409
+
+    def answer(kind, context, **kwargs):
+        assert kind == "chat" and context["mes"] == month
+        assert context["gastos"]["total"] == "92.31"
+        return {"answer": "O gasto foi de R$ 92,31."}
+
+    monkeypatch.setattr(jobs, "codex_result", answer)
+    assert jobs.run_one()
+    message = site.get("/api/finance-chat").json["messages"][0]
+    assert (message["state"], message["answer"]) == ("done", "O gasto foi de R$ 92,31.")
+
+
 def test_first_catalog_seeds_supported_agents_once(site, monkeypatch):
     models = {"gpt-6-luna": {"efforts": ["low", "medium"]}, "gpt-6.1-sol": {"efforts": ["medium"]},
               "gpt-6-astra": {"efforts": ["medium"]}}

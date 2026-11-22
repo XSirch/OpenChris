@@ -237,6 +237,17 @@ async function signOut() {
 }
 async function openAction(key, node) {
   const id = node?.dataset.id;
+  if (key === 'finance-chat') {
+    const chat = dialog('Chat financeiro', `
+      <p class="dialog-copy">Pergunte sobre seus gastos, receitas, carteira ou aportes. O Codex usa um resumo financeiro para responder. As conversas ficam no OpenChris.</p>
+      <div class="stack tight finance-chat" data-chat-log role="log" aria-label="Conversa financeira"></div>
+      <form data-form="finance-chat">
+        <label class="field">Sua pergunta <textarea name="question" rows="3" maxlength="1000" required></textarea></label>
+        <button type="submit" class="primary block">Enviar pergunta</button>
+      </form>`);
+    await refreshFinanceChat(chat);
+    return;
+  }
   if (key === 'fechar') {
     closeDialog();
     return;
@@ -492,6 +503,23 @@ async function submitCalculator(form) {
   }
 }
 
+async function refreshFinanceChat(id) {
+  while (dialogId === id && dlg.open) {
+    const { messages, waiting } = await api('/api/finance-chat');
+    if (dialogId !== id || !dlg.open) return;
+    const log = body.querySelector('[data-chat-log]');
+    const pending = messages.some(m => ['pending', 'running', 'retry'].includes(m.state));
+    const content = messages.map(m => `<div class="inset"><p><strong>Você · ${esc(m.month.split('-').reverse().join('/'))}</strong></p>
+      <p class="chat-text">${esc(m.question)}</p>
+      ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>`
+        : `<p class="note">${esc(m.notice || waiting || (m.state === 'running' ? 'Preparando a resposta…' : 'Pergunta na fila…'))}</p>`}</div>`).join('');
+    if (log.innerHTML !== content) log.innerHTML = content;
+    body.querySelector('form button[type=submit]').disabled = pending;
+    if (!pending) return;
+    await new Promise(resolve => setTimeout(resolve, 4000));
+  }
+}
+
 async function submit(form) {
   const key = form.dataset.form;
   if (key === 'calc') return submitCalculator(form);
@@ -502,6 +530,12 @@ async function submit(form) {
   btn.disabled = true;
   dialogError('');
   try {
+    if (key === 'finance-chat') {
+      await api('/api/finance-chat', { question: data.question, month: state.month });
+      form.reset();
+      await refreshFinanceChat(currentDialog);
+      return;
+    }
     if (key === 'agent-settings') {
       await api('/api/agents/' + encodeURIComponent(form.dataset.kind) + '/settings', data);
       if (currentDialog === dialogId && dlg.open) {
