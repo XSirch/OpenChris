@@ -162,11 +162,19 @@ def _date(value):
     return date.fromisoformat(str(value)[:10])
 
 
+def _empty_snapshot(item):
+    return (item.snapshot is not None and item.status == "Atualizada"
+            and not any(item.snapshot.get(key) for key in ("accounts", "bills", "entries", "positions")))
+
+
 def bank_snapshot(db):
     accounts, bills, timestamps = {}, {}, []
     complete = fresh = forecast = True
+    missing_connections = 0
     now = datetime.now(timezone.utc)
     for item in db.scalars(select(Connection).order_by(Connection.updated_at)):
+        if item.snapshot is None or _empty_snapshot(item):
+            missing_connections += 1
         if item.snapshot is None:
             complete = fresh = forecast = False
             continue
@@ -187,6 +195,7 @@ def bank_snapshot(db):
             "bills": list(bills.values()),
             "updated_at": min(timestamps) if timestamps else None,
             "balance_fresh": bool(timestamps) and fresh,
+            "missing_connections": missing_connections,
             "forecast_complete": bool(timestamps) and forecast}
 
 
@@ -450,9 +459,8 @@ def connections():
     with db_session() as db:
         items = []
         for item in db.scalars(select(Connection)):
-            no_data = (item.snapshot is not None and item.status == "Atualizada"
-                       and not any(item.snapshot.get(key) for key in ("accounts", "bills", "entries", "positions")))
-            items.append({"id": item.id, "name": _institution_name(item.name), "status": item.status, "no_data": no_data,
+            items.append({"id": item.id, "name": _institution_name(item.name), "status": item.status,
+                          "no_data": _empty_snapshot(item),
                           "updated_at": item.updated_at.isoformat() if item.updated_at else None})
     return jsonify(pluggy_configured=configured(), items=items, csv_columns=COLUMNS)
 

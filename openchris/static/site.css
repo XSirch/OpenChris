@@ -69,7 +69,7 @@ main:focus { outline: none; }
 .positive { color: var(--green); }
 .expense-value { color: #ff9a9f; }
 .metrics,.rows,.details-list,.tools-list { border-top: 1px solid var(--line); }
-.metric-group .metrics,.metric-group .bar-chart { margin-top: 16px; }
+.metric-group .metrics { margin-top: 16px; }
 .row,.row-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .row > :first-child,.row-link > :first-child { min-width: 0; overflow-wrap: anywhere; }
 .row > :last-child,.row-link > :last-child { text-align: end; }
@@ -98,22 +98,11 @@ main:focus { outline: none; }
 .nav-month { justify-content: center; margin: -8px 0 17px; gap: 4px; }
 .nav-month .icon-btn { color: var(--accent); }
 .nav-month input { width: auto; min-height: 40px; padding: 6px 10px; border: 0; background: var(--surface); color: var(--accent); font-weight: 600; }
-.bar-chart { display: flex; height: 31px; overflow: hidden; border-radius: 5px; background: var(--surface); }
-.chart-svg { display: block; width: 100%; height: 28px; }
-.c0 { fill: #235481; background: #235481; }
-.c1 { fill: #205be3; background: #205be3; }
-.c2 { fill: #66aca8; background: #66aca8; }
-.c3 { fill: #b2c8ed; background: #b2c8ed; }
-.c4 { fill: #a291c7; background: #a291c7; }
-.c5 { fill: #c8946e; background: #c8946e; }
-.swatch { display: inline-block; flex: 0 0 17px; height: 17px; border-radius: 3px; }
 details > summary { list-style: none; }
 details > summary::-webkit-details-marker { display: none; }
 .accordion { border-bottom: 1px solid var(--line); }
 .accordion > summary { display: flex; align-items: center; gap: 9px; min-height: 51px; padding: 10px 0; }
 .accordion > summary > strong { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.accordion > summary .pair { text-align: right; line-height: 1.25; flex-shrink: 0; }
-.pair small { display: block; color: var(--muted); }
 .accordion > summary:hover { color: var(--accent); }
 .accordion .rotate { color: var(--accent); transition: transform .16s ease; }
 .accordion[open] > summary .rotate { transform: rotate(180deg); }
@@ -128,6 +117,44 @@ details > summary::-webkit-details-marker { display: none; }
 .meta .full { width: 100%; }
 .entry .split,.asset .split { align-items: baseline; }
 .entry .split > :first-child,.asset .split > :first-child { min-width: 0; overflow-wrap: anywhere; }
+
+.portfolio-page { display: grid; gap: 18px; overflow-wrap: anywhere; }
+.portfolio-balance { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: start; gap: 4px 24px; }
+.portfolio-balance > * { min-width: 0; }
+.portfolio-actions { align-items: center; font-size: .92rem; }
+.portfolio-actions .text-btn { min-height: 40px; }
+.portfolio-currencies { display: flex; flex-wrap: wrap; gap: 6px 16px; list-style: none; margin: 9px 0 0; padding: 0; color: var(--muted); }
+.portfolio-currencies strong { color: var(--text); }
+.portfolio-coverage { margin-top: 10px; color: var(--muted); }
+.portfolio-coverage a { margin-inline-start: .3em; }
+.portfolio-grid { display: grid; gap: 28px 36px; border-top: 1px solid var(--line); padding-top: 22px; }
+.portfolio-grid > * { min-width: 0; }
+.portfolio-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.field.portfolio-currency { flex-direction: row; align-items: center; gap: 8px; }
+.portfolio-modes { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 9px; background: var(--input); border-radius: 8px; }
+.portfolio-modes button { flex: 1 0 auto; min-height: 40px; padding: 4px 10px; border: 0; border-radius: 5px; color: var(--muted); background: transparent; }
+.portfolio-modes button:hover, .portfolio-modes button[aria-pressed=true] { color: var(--text); background: var(--surface); }
+.portfolio-modes button[aria-pressed=true] { box-shadow: inset 0 -2px var(--accent); font-weight: 650; }
+.portfolio-bar { display: grid; gap: 6px; width: 100%; padding: 10px 8px; border: 0; border-bottom: 1px solid var(--line); color: var(--text); background: transparent; text-align: start; }
+.portfolio-bar:hover, .portfolio-bar[aria-pressed=true] { background: var(--surface); }
+.portfolio-bar:focus-visible, .portfolio-modes button:focus-visible { outline-offset: -2px; }
+.portfolio-bar-label { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 12px; align-items: baseline; }
+.portfolio-bar-label .numeric { text-align: end; }
+.portfolio-bar small, .portfolio-position summary small { color: var(--muted); }
+.portfolio-track { position: relative; height: 7px; border-radius: 4px; background: var(--surface); }
+.portfolio-bar:hover .portfolio-track, .portfolio-bar[aria-pressed=true] .portfolio-track { background: var(--input); }
+.portfolio-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+.portfolio-marker { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--warm); transform: translateX(-1px); }
+.portfolio-context { display: grid; gap: 7px; margin-top: 10px; }
+.portfolio-list h2 { margin-bottom: 13px; scroll-margin-top: 16px; }
+.portfolio-filter { display: flex; justify-content: space-between; gap: 8px; align-items: center; min-height: 40px; }
+.portfolio-position summary small { display: block; font-size: .88rem; font-weight: 400; margin-top: 2px; }
+.portfolio-position summary .numeric { flex: 0 1 auto; min-width: 0; text-align: end; }
+.portfolio-position summary svg { flex: 0 0 auto; }
+.portfolio-position .meta > div { min-width: 0; }
+@media (min-width: 850px) {
+  .portfolio-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
 .entry .split > :last-child,.asset .split > :last-child { flex-shrink: 0; }
 .entry p { margin-top: 3px; }
 .entry .text-btn,.asset .text-btn { font-size: .9rem; }
@@ -228,7 +255,8 @@ body:has(dialog[open]) { overflow: hidden; }
   #notice:not(:empty) { bottom: 24px; }
 }
 @media (max-width: 899px) {
-  [data-form=calc] :is(button, input, select, .result) {
+  [data-form=calc] :is(button, input, select, .result),
+  .portfolio-page :is(a, button, input, select, summary) {
     scroll-margin-block-end: calc(76px + env(safe-area-inset-bottom));
   }
 }

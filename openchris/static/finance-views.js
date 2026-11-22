@@ -115,152 +115,265 @@ export function today(fin, economy) {
     </div>`
   );
 }
-function asset(pos) {
-  const labels = {
-    issuer: 'Emissor',
-    indexer: 'Indexador',
-    maturity: 'Vencimento',
-    institution: 'Instituição',
-    identifier: 'Identificador',
-  };
-  const meta = Object.entries(labels)
-    .filter(([key]) => has(pos[key]))
-    .map(
-      ([key, label]) =>
-        /* HTML */ `<div>
-          <dt>${label}</dt>
-          <dd>${key === 'maturity' ? date(pos[key]) : esc(pos[key])}</dd>
-        </div>`,
-    )
-    .join('');
-  return /* HTML */ `<article class="asset">
-    <div class="split">
-      <h3>${esc(pos.name)}</h3>
-      <span class="numeric">${money(pos.value, pos.currency || 'BRL')}</span>
-    </div>
-    <dl class="meta">
-      ${meta}
-      <div class="full">
-        <dt>Origem</dt>
-        <dd>${origin(pos.source)}${pos.updated_at ? ' · ' + date(pos.updated_at) : ''}</dd>
-      </div>
-    </dl>
-    ${pos.needs_review ? note('Classificação pendente de confirmação.') : ''}
-    <div class="actions">
-      ${action('asset', 'Ver ficha e fontes', 'text-btn', `data-id="${esc(pos.id)}"`)}${action('edit-position', 'Editar posição', 'text-btn', `data-id="${esc(pos.id)}"`)}
-    </div>
-  </article>`;
+function assetClass(position) {
+  return position.asset_class || 'A classificar';
 }
-function classGroup(name, rows, group, idx) {
-  const currencies = new Set(rows.map((p) => p.currency || 'BRL'));
-  const sorted = [...rows].sort(
-    (a, b) => (a.institution || '').localeCompare(b.institution || '') || a.name.localeCompare(b.name),
-  );
-  const byInstitution = new Map();
-  for (const p of sorted) {
-    const institution = p.institution || 'Instituição não informada';
-    if (!byInstitution.has(institution)) byInstitution.set(institution, []);
-    byInstitution.get(institution).push(p);
-  }
-  const fixedIncome = name.toLocaleLowerCase('pt-BR') === 'renda fixa';
-  const detail = fixedIncome
-    ? /* HTML */ `<details class="inset">
-        <summary class="text-btn">Ver títulos por instituição ${icon('right', 14)}</summary>
-        ${[...byInstitution]
-          .map(
-            ([inst, items]) =>
-              /* HTML */ `<section class="table-foot">
-                <h4>${esc(inst)}</h4>
-                ${items.map(asset).join('')}
-              </section>`,
-          )
-          .join('')}
-      </details>`
-    : sorted.map(asset).join('');
-  return /* HTML */ `<details class="accordion" ${fixedIncome ? 'open' : ''}>
-    <summary>
-      <span class="swatch c${idx % 6}"></span><strong>${esc(name)}</strong
-      ><span class="pair"
-        >${
-          group
-            ? money(group.value)
-            : currencies.size === 1
-              ? money(
-                  rows.reduce((sum, p) => sum + Number(p.value), 0),
-                  [...currencies][0],
-                )
-              : 'Por moeda'
-        }<small>${group ? percent(group.percent) : 'Moeda de origem'}</small></span
-      >${icon('down', 16, 'rotate')}
-    </summary>
-    <div class="details-body">${detail}</div>
-  </details>`;
-}
-export function portfolio(fin) {
-  const p = fin.portfolio,
-    classes = p.classes,
-    positions = p.positions;
-  const names = [
-    ...new Set([
-      ...classes.map((c) => c.asset_class),
-      ...positions.map((p) => p.asset_class || 'A classificar'),
-    ]),
+
+function asset(position) {
+  const facts = [
+    ['Classe', assetClass(position)],
+    ['Emissor', position.issuer],
+    ['Indexador', position.indexer],
+    ['Vencimento', position.maturity && date(position.maturity)],
+    ['Identificador', position.identifier],
+    ['Atualização', position.updated_at && date(position.updated_at, { dateStyle: 'short', timeStyle: 'short' })],
   ];
-  let x = 0;
-  const chart = classes
-    .map((c, i) => {
-      const width = Math.max(0, Math.min(100 - x, Number(c.percent) || 0)),
-        start = x;
-      x += width;
-      return `<svg x="${start}%" width="${width}%" height="100%"><rect width="100%" height="100%" class="c${i % 6}"/>${width >= 13 ? `<text x="50%" y="60%" text-anchor="middle" fill="${i % 6 < 2 ? 'white' : '#101925'}" font-size="12" font-weight="650">${percent(c.percent)}</text>` : ''}</svg>`;
-    })
-    .join('');
-  const updated = positions
-    .map((p) => p.updated_at)
-    .filter(Boolean)
-    .sort()
-    .at(-1);
-  const foreign = Object.entries(p.foreign_totals || {})
-    .map(([currency, value]) => row('Em ' + esc(currency), money(value, currency)))
-    .join('');
-  return (
-    header('Carteira') +
-    /* HTML */ `<div class="columns">
-      <div class="stack">
-        <section class="metric-group">
-          ${metric('Patrimônio investido', money(p.total))}${foreign}${chart ? /* HTML */ `<div class="bar-chart" aria-hidden="true"><svg width="100%" height="31">${chart}</svg></div>` : ''}
-        </section>
-        <section aria-label="Investimentos por classe">
-          ${
-            names.length
-              ? /* HTML */ `<div class="details-list">
-                  ${names
-                    .map((n, i) =>
-                      classGroup(
-                        n,
-                        positions.filter((p) => (p.asset_class || 'A classificar') === n),
-                        classes.find((c) => c.asset_class === n),
-                        i,
-                      ),
-                    )
-                    .join('')}
-                </div>`
-              : sectionTitle('Seus investimentos') +
-                empty(
-                  'A carteira está vazia. Registre uma posição pelo valor atual ou importe o extrato da instituição.',
-                )
-          }${updated ? `<p class="note table-foot">Atualizado em ${date(updated, { dateStyle: 'short', timeStyle: 'short' })}.</p>` : ''}
-        </section>
-      </div>
-      <section class="stack tight">
-        <h2>Adicionar investimentos</h2>
+  return /* HTML */ `
+    <details class="accordion portfolio-position">
+      <summary>
+        <strong>${esc(position.name)}<small>${esc(position.institution || 'Instituição não identificada')}</small></strong>
+        <span class="numeric">${money(position.value, position.currency || 'BRL')}</span>
+        ${icon('down', 16, 'rotate')}
+      </summary>
+      <div class="details-body">
+        <dl class="meta">
+          ${facts.filter(([, value]) => has(value)).map(([label, value]) =>
+            `<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}
+          <div><dt>Origem</dt><dd>${origin(position.source)}</dd></div>
+        </dl>
+        ${position.needs_review ? note('Classificação pendente de confirmação.') : ''}
         <div class="actions">
-          ${op('position', 'Cadastrar posição', 'primary')}${op('import-positions', 'Importar extrato', 'secondary')}
+          ${action('asset', 'Ver ficha e fontes', 'text-btn', `data-id="${esc(position.id)}"`)}
+          ${action('edit-position', 'Editar posição', 'text-btn', `data-id="${esc(position.id)}"`)}
         </div>
-        ${link('mais?abrir=conexoes', 'Ver conexões bancárias')}
+      </div>
+    </details>`;
+}
+
+const groupLabels = { class: 'Classe', institution: 'Instituição', asset: 'Ativo', issuer: 'Emissor' };
+const fixedIncome = (position) => assetClass(position).toLocaleLowerCase('pt-BR') === 'renda fixa';
+const searchKey = (value) => value.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/\p{M}/gu, '');
+const cents = (value) => Math.round(Number(value) * 100);
+const share = (part, total) => total > 0 ? 100 * part / total : null;
+
+function distribution(positions, mode, targets) {
+  const groups = new Map();
+  for (const position of positions) {
+    let name, key;
+    if (mode === 'asset') {
+      name = position.name;
+      key = position.identifier ? 'code:' + position.identifier.toUpperCase() : 'id:' + position.id;
+    } else if (mode === 'institution') {
+      name = position.institution || 'Instituição não identificada';
+      key = searchKey(name);
+    } else if (mode === 'issuer') {
+      name = position.issuer || 'Emissor não informado';
+      key = searchKey(name);
+    } else {
+      name = key = assetClass(position);
+    }
+    if (!groups.has(key)) groups.set(key, { key, name, value: 0, positions: [] });
+    const group = groups.get(key);
+    group.value += cents(position.value);
+    group.positions.push(position);
+  }
+  for (const name of Object.keys(targets)) {
+    if (!groups.has(name)) groups.set(name, { key: name, name, value: 0, positions: [] });
+  }
+  return [...groups.values()].sort((a, b) => b.value - a.value || a.name.localeCompare(b.name, 'pt-BR'));
+}
+
+function allocationBar(group, index, total, currency, target, selected) {
+  const weight = share(group.value, total);
+  const diff = Math.round(((weight ?? 0) - (target ?? 0)) * 10) / 10;
+  const distance = diff
+    ? ` · ${Math.abs(diff).toLocaleString('pt-BR')} pp ${diff > 0 ? 'acima' : 'abaixo'}`
+    : ' · Na meta';
+  return /* HTML */ `
+    <button type="button" class="portfolio-bar" data-group="${index}"
+      aria-pressed="${selected}" aria-controls="portfolio-results">
+      <span class="portfolio-bar-label">
+        <strong>${esc(group.name)}</strong>
+        <span class="numeric">${money(group.value / 100, currency)}${weight === null ? '' : ' · ' + percent(weight)}</span>
+      </span>
+      <span class="portfolio-track" aria-hidden="true">
+        <span class="portfolio-fill" style="inline-size:${weight ?? 0}%"></span>
+        ${has(target) ? `<span class="portfolio-marker" style="inset-inline-start:${target}%"></span>` : ''}
+      </span>
+      ${has(target) ? `<small>Meta ${percent(target)}${weight === null ? '' : distance}</small>` : ''}
+    </button>`;
+}
+
+export function portfolio(fin) {
+  const p = fin.portfolio;
+  const currencies = Object.entries(p.foreign_totals || {}).sort(([a], [b]) => a.localeCompare(b));
+  const missing = p.missing_connections;
+  return header('Carteira') + /* HTML */ `
+    <div class="portfolio-page">
+      <section class="portfolio-balance" aria-label="Patrimônio investido">
+        <div>
+          ${p.positions.length
+            ? metric('Patrimônio investido em reais', money(p.total))
+            : empty('A carteira está vazia. Cadastre uma posição ou importe um extrato para começar.')}
+          ${currencies.length ? `<ul class="portfolio-currencies">${currencies.map(([code, value]) =>
+            `<li>${esc(code)} <strong class="numeric">${money(value, code)}</strong></li>`).join('')}</ul>` : ''}
+          ${missing ? `<p class="portfolio-coverage">${missing === 1 ? '1 conexão sem dados' : `${missing} conexões sem dados`}.
+            ${link('mais?abrir=conexoes', 'Ver conexões')}</p>` : ''}
+        </div>
+        <div class="actions portfolio-actions">
+          ${op('position', 'Cadastrar posição', p.positions.length ? 'text-btn' : 'primary')}
+          ${op('import-positions', 'Importar extrato')}
+          ${missing ? '' : link('mais?abrir=conexoes', 'Ver conexões')}
+        </div>
       </section>
-    </div>`
-  );
+      ${p.positions.length ? `
+        <div class="portfolio-grid">
+          <section class="portfolio-analysis" aria-labelledby="distribution-heading">
+            <div class="portfolio-section-head">
+              <h2 id="distribution-heading">Distribuição</h2>
+              ${currencies.length ? `<label class="field portfolio-currency">Moeda
+                <select id="portfolio-currency">
+                  ${['BRL', ...currencies.map(([code]) => code)].map((code) =>
+                    `<option value="${esc(code)}">${esc(code)}</option>`).join('')}
+                </select></label>` : ''}
+            </div>
+            <div class="portfolio-modes" role="group" aria-label="Agrupar distribuição">
+              ${Object.entries(groupLabels).map(([key, title]) =>
+                `<button type="button" data-portfolio-mode="${key}" aria-pressed="${key === 'class'}"${key === 'issuer' ? ' hidden' : ''}>${title}</button>`).join('')}
+            </div>
+            <div class="portfolio-chart" id="portfolio-chart"></div>
+            <button id="portfolio-more" type="button" class="text-btn" aria-expanded="false" aria-controls="portfolio-chart" hidden>Ver todos os ativos</button>
+            <div id="portfolio-context" class="portfolio-context"></div>
+          </section>
+          <section class="portfolio-list" aria-labelledby="portfolio-heading">
+            <h2 id="portfolio-heading" tabindex="-1">Posições</h2>
+            <label class="field">Buscar posição
+              <input id="portfolio-search" type="search" placeholder="Nome, código ou emissor">
+            </label>
+            <div class="portfolio-filter">
+              <p id="portfolio-count" class="muted" role="status"></p>
+              <button id="portfolio-clear" type="button" class="text-btn" hidden>Limpar filtro</button>
+            </div>
+            <div id="portfolio-results" class="details-list"></div>
+          </section>
+        </div>` : ''}
+    </div>`;
+}
+
+export function mountPortfolio(root, fin, view) {
+  const chart = root.querySelector('#portfolio-chart');
+  if (!chart) return;
+  const modes = [...root.querySelectorAll('[data-portfolio-mode]')];
+  const currencyControl = root.querySelector('#portfolio-currency');
+  const search = root.querySelector('#portfolio-search');
+  const count = root.querySelector('#portfolio-count');
+  const heading = root.querySelector('#portfolio-heading');
+  const clear = root.querySelector('#portfolio-clear');
+  const more = root.querySelector('#portfolio-more');
+  const context = root.querySelector('#portfolio-context');
+  const list = root.querySelector('#portfolio-results');
+  const profile = fin.profile;
+  let groups = [];
+
+  if (currencyControl) {
+    currencyControl.value = view.currency;
+    if (!currencyControl.value) currencyControl.value = 'BRL';
+  }
+  view.currency = currencyControl?.value || 'BRL';
+  search.value = view.query;
+
+  function renderPositions() {
+    const group = groups.find((g) => g.key === view.group);
+    const pool = group?.positions || fin.portfolio.positions.filter((p) => p.currency === view.currency);
+    const terms = searchKey(view.query.trim()).split(/\s+/).filter(Boolean);
+    const positions = pool.filter((position) => {
+      const text = searchKey([position.name, position.identifier, position.issuer].filter(Boolean).join(' '));
+      return terms.every((term) => text.includes(term));
+    });
+    const quantity = positions.length + (positions.length === 1 ? ' posição' : ' posições');
+    count.textContent = group ? `${group.name} · ${quantity}` : quantity;
+    clear.hidden = !group;
+    list.innerHTML = positions.length ? positions.map(asset).join('') : empty(
+      terms.length ? 'Nenhuma posição encontrada para essa busca.' : 'Nenhuma posição para este filtro.',
+    );
+  }
+
+  function renderChart() {
+    const positions = fin.portfolio.positions.filter((p) => p.currency === view.currency);
+    const fixed = positions.filter(fixedIncome);
+    modes.find((button) => button.dataset.portfolioMode === 'issuer').hidden = !fixed.length;
+    if (!fixed.length && view.mode === 'issuer') {
+      view.mode = 'class';
+      view.group = null;
+    }
+    const included = view.mode === 'issuer' ? fixed : positions;
+    const total = included.reduce((sum, position) => sum + cents(position.value), 0);
+    const targets = view.mode === 'class' && view.currency === 'BRL' ? profile.targets : {};
+    const showTargets = Object.keys(targets).length > 0;
+    groups = distribution(included, view.mode, targets);
+    if (!groups.some((group) => group.key === view.group)) view.group = null;
+    for (const button of modes) {
+      button.setAttribute('aria-pressed', button.dataset.portfolioMode === view.mode);
+    }
+    const hasMore = view.mode === 'asset' && groups.length > 5;
+    const visible = hasMore && !view.expanded ? groups.slice(0, 5) : groups;
+    more.hidden = !hasMore;
+    more.setAttribute('aria-expanded', view.expanded);
+    more.textContent = view.expanded ? 'Mostrar só os cinco maiores' : 'Ver todos os ativos';
+    chart.innerHTML = visible.map((group, index) => allocationBar(
+      group, index, total, view.currency, showTargets ? Number(targets[group.name] || 0) : null,
+      group.key === view.group,
+    )).join('') || empty('Nenhuma posição nesta moeda.');
+    const topShare = share(groups.slice(0, 5).reduce((sum, group) => sum + group.value, 0), total);
+    context.innerHTML = [
+      hasMore && topShare !== null ? note(`Os cinco maiores ativos representam ${percent(topShare)} do total em ${esc(view.currency)}.`) : '',
+      view.mode === 'issuer' ? note('Percentuais sobre o total da renda fixa nesta moeda.') : '',
+      showTargets ? note((profile.targets_manual ? 'Metas definidas por você.' : 'Metas sugeridas pelo seu perfil.')
+        + ' O traço indica a meta em cada barra. pp significa pontos percentuais.') : '',
+      view.mode === 'class' && view.currency === 'BRL' ? link('aportes?abrir=simulacao', 'Simular aporte') : '',
+    ].join('');
+    renderPositions();
+  }
+
+  for (const button of modes) {
+    button.addEventListener('click', () => {
+      view.mode = button.dataset.portfolioMode;
+      view.group = null;
+      view.expanded = false;
+      renderChart();
+    });
+  }
+  currencyControl?.addEventListener('change', () => {
+    view.currency = currencyControl.value;
+    view.group = null;
+    view.expanded = false;
+    renderChart();
+  });
+  search.addEventListener('input', () => {
+    view.query = search.value;
+    renderPositions();
+  });
+  chart.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-group]');
+    if (!button) return;
+    const key = groups[Number(button.dataset.group)].key;
+    view.group = view.group === key ? null : key;
+    view.query = search.value = '';
+    renderChart();
+    heading.focus();
+  });
+  clear.addEventListener('click', () => {
+    view.group = null;
+    renderChart();
+    search.focus();
+  });
+  more.addEventListener('click', () => {
+    view.expanded = !view.expanded;
+    if (!view.expanded && groups.slice(5).some((group) => group.key === view.group)) view.group = null;
+    renderChart();
+    if (view.expanded) chart.querySelector('[data-group="5"]')?.focus();
+  });
+  renderChart();
 }
 export function matchingCharges(advance, entries) {
   return entries.filter(
@@ -277,6 +390,7 @@ export function matchingCharges(advance, entries) {
 export function editableEntry(e, advances = []) {
   return e.source === 'manual' && !e.advanced_by && !advances.some((advance) => advance.id === e.id);
 }
+
 function entry(e, advances) {
   const credit = e.kind === 'income' || e.kind === 'refund';
   const debit = e.kind === 'expense';

@@ -1,5 +1,5 @@
 import { api, esc, has, isoToday, icon, action, link, money } from './ui.js';
-import { today, portfolio, spending, contributions } from './finance-views.js';
+import { today, portfolio, mountPortfolio, spending, contributions } from './finance-views.js';
 import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js';
 import {
   advanceForm,
@@ -35,6 +35,7 @@ const state = {
   category: '',
   ecoTab: 'agenda',
   event: null,
+  portfolio: { currency: 'BRL', mode: 'class', group: null, query: '', expanded: false },
 };
 let finance = null,
   conn = null,
@@ -147,8 +148,12 @@ async function render(change = false) {
     }
     if (seq !== loadId) return;
     main.innerHTML = content;
+    if (route === 'carteira') mountPortfolio(main, finance, state.portfolio);
     main.setAttribute('aria-busy', 'false');
     if (change && route === 'mais' && url.searchParams.get('abrir') === 'conexoes') void openAction('banco');
+    if (change && route === 'aportes' && url.searchParams.get('abrir') === 'simulacao') {
+      void openAction('simulate').catch(handleError);
+    }
   } catch (err) {
     if (seq !== loadId) return;
     main.setAttribute('aria-busy', 'false');

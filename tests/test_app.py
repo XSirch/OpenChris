@@ -126,6 +126,7 @@ def test_meu_pluggy_uses_account_codes_and_investment_holders(client, monkeypatc
     result = {row["id"]: row for row in client.get("/api/connections").json["items"]}
     assert {key: row["name"] for key, row in result.items()} == items
     assert {key for key, row in result.items() if row["no_data"]} == {"3"}
+    assert client.get("/api/finance").json["portfolio"]["missing_connections"] == 1
     with db_session() as db:
         assert {p.external_id: p.institution for p in db.scalars(select(Position))} == {
             f"pluggy:i:{key}": name for key, name in items.items() if name}

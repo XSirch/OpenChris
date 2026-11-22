@@ -693,7 +693,8 @@ def dashboard(session, month=None, amount=None, *, today=None, bank=None):
                     "targets_manual": profile.targets is not None, "target_classes": sorted(set(CLASSES) | set(values) | set(targets))}
     return {"month": start.strftime("%Y-%m"), "as_of": today.isoformat(), "profile": profile_json,
             "portfolio": {"total": _cash(total), "classes": classes, "positions": [position_data(p) for p in positions],
-                          "foreign_totals": {k: _cash(v) for k, v in foreign.items()}},
+                          "foreign_totals": {k: _cash(v) for k, v in foreign.items()},
+                          "missing_connections": (bank or {}).get("missing_connections", 0)},
             "spending": _spending(session, start, today),
             "contribution": _budget(session, profile, bank or {}, today, amount, values, targets)}
 
