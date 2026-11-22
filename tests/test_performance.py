@@ -42,10 +42,14 @@ def test_observations_compound_without_counting_new_cash_as_gain(database):
     save(start, "1000")
     save(start + timedelta(days=1), "1500")
     with db_session() as db:
+        db.add(InvestmentBalance(connection_id="missing", day=start + timedelta(days=1),
+                                 name="Banco B", positions={"late": "300"}))
+        db.flush()
         view = portfolio_performance(db, start + timedelta(days=1))
         assert view["return_points"][-1]["percent"] == "0.00"
         assert view["net_flows"] == "500.00" and view["partial"]
         assert view["institutions"] == ["Banco A"]
+        assert [row["value"] for row in view["observations"]] == ["1000.00", "1500.00"]
 
     history.extend([transaction("sale", "SELL", "2026-01-08", "100"),
                     transaction("div", "INTEREST", "2026-01-08", "30")])

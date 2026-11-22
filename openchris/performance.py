@@ -312,15 +312,16 @@ def portfolio_performance(db, today=None):
     change = _balances(scope) - _balances(valuations[base]) if base else None
     manual = db.scalar(select(Position.id).where(Position.active.is_(True), Position.currency == "BRL",
                                                  Position.source != "pluggy").limit(1)) is not None
-    partial = bool(connections.keys() - scope.keys()) or manual
+    partial = bool(connections.keys() - scope.keys()) or manual or any(not row.valued_on for row in scope.values())
+    observed_scope = [{"date": day, "value": _cash(_balances({key: group[key] for key in scope}))}
+                      for day, group in observations.items() if scope.keys() <= group.keys()]
     data = {
         "year": today.year, "start": base, "end": end, "partial": partial,
         "estimated": any(row.estimated for day in chain for row in valuations[day].values()),
         "stale": bool(end and (max(observations) > end + timedelta(days=1)
                                or any(connections[key].status != "Atualizada" for key in scope))),
         "institutions": sorted({connections[key].name or "Instituição não identificada" for key in scope}),
-        "observations": [{"date": day, "value": _cash(_balances(group))}
-                         for day, group in observations.items() if group.keys() == scope.keys()],
+        "observations": observed_scope,
         "return_points": [{"date": day, "percent": _cash(rate * 100)} for day, rate in chain.items()],
         "net_flows": _cash(flows) if end else None, "income": _cash(income) if end else None,
         "balance_change": _cash(change), "investment_result": _cash(change - flows + income) if base else None,
