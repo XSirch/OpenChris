@@ -35,17 +35,17 @@ const telas = (() => {
     const [x, y] = pontos.at(-1);
     return `<div class="mini-history">
       <svg viewBox="0 0 199 52" preserveAspectRatio="none" role="img" aria-label="Patrimônio investido de junho a novembro, de ${moeda(m.historico[0][1])} a ${moeda(m.patrimonio)}.">
-        <defs><linearGradient id="area-historico" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#9ebde2" stop-opacity=".3"/><stop offset="1" stop-color="#9ebde2" stop-opacity="0"/></linearGradient></defs>
+        <defs><linearGradient id="area-historico" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#33494e" stop-opacity=".23"/><stop offset="1" stop-color="#33494e" stop-opacity="0"/></linearGradient></defs>
         <path d="${traco} L${x} 52 L3 52 Z" fill="url(#area-historico)"/>
-        <path d="${traco}" fill="none" stroke="#b5cdeb" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
-        <circle cx="${x}" cy="${y.toFixed(2)}" r="3" fill="#d2e1f4"/>
+        <path d="${traco}" fill="none" stroke="#30464b" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${x}" cy="${y.toFixed(2)}" r="3" fill="#263e43"/>
       </svg><div class="chart-range" aria-hidden="true"><span>Jun</span><span>Nov</span></div></div>`;
   }
 
   function saldo(fluxo) {
     const anterior = m.historico.at(-2)[1];
     const mudanca = (m.patrimonio / anterior - 1) * 100;
-    return `<section class="wealth" aria-label="Resumo financeiro">
+    return `<section class="wealth titanio" aria-label="Resumo financeiro">
       <a class="wealth-link" href="#carteira">
         <div class="wealth-top"><span>${ic('wallet')}Patrimônio investido</span>${ic('forth')}</div>
         <div class="wealth-middle"><div>${valorGrande(m.patrimonio)}
@@ -166,7 +166,7 @@ const telas = (() => {
     const partes = m.distribuir(valor);
     return `<p class="sub">${moeda(valor)} distribuídos entre as classes abaixo da meta.</p>
       <div class="comparison">${partes.map(p => `<div><div class="bar-label"><span>${p.nome}</span><strong class="num">${moeda(p.parcela)}</strong></div>
-        <div class="bar-track" aria-hidden="true"><span style="width:${p.parcela / valor * 100}%;background:${p.cor}"></span></div>
+        <div class="bar-track" aria-hidden="true"><span data-parcela="${p.id}" style="width:${p.parcela / valor * 100}%;background:${p.cor}"></span></div>
         <span class="sub">${percentual(p.parcela / valor * 100)} do aporte</span></div>`).join('')}</div>
       <p class="sub section-gap">Patrimônio após a simulação · ${moeda(m.patrimonio + valor)}</p>
       ${disponivel === null || valor > disponivel ? '<p class="sub">O cálculo usa o valor informado para esta simulação.</p>' : ''}`;
@@ -186,7 +186,7 @@ const telas = (() => {
         ${campo('aporte', 'Valor da simulação (R$)', `id="valor-aporte" required aria-describedby="erro-aporte" value="${valor === null ? '' : valor.toLocaleString('pt-BR', { useGrouping: false, maximumFractionDigits: 2 })}"`)}
         <p class="field-error" id="erro-aporte" role="alert"></p><div class="button-line"><button class="primary">Recalcular</button>
         <button type="button" class="text-link" data-repor-aporte${estado.simulado === null ? ' hidden' : ''}>Usar valor inicial</button></div></form></section>
-      </div><section class="panel"><h2>Distribuição simulada</h2><div class="section-gap" id="distribuicao" aria-live="polite">${distribuicao(valor, f.disponivel)}</div></section></div>`;
+      </div><section class="panel" aria-labelledby="titulo-distribuicao"><h2 id="titulo-distribuicao">Distribuição simulada</h2><div class="section-gap" id="distribuicao">${distribuicao(valor, f.disponivel)}</div></section></div>`;
   }
 
   function economia(params) {
@@ -243,7 +243,7 @@ const telas = (() => {
       ${ferramenta('calc', 'Calculadoras', 'Juros, prazo e aporte mensal.', 'calculadoras')}</section>
       <section class="panel"><h2>Prévia</h2>
       ${ferramenta('sliders', 'Cenário da conta', 'Alternar entre os quatro exemplos.', 'previa', true)}
-      ${ferramenta('layers', 'Sistema visual', 'Cores, tipografia e estados dos controles.', 'sistema')}</section></div>
+      ${ferramenta('layers', 'Sistema visual', 'Cores, acabamento, movimento e controles.', 'sistema')}</section></div>
       <section class="panel"><h2>Sua conta</h2>
       ${ferramenta('profile', 'Perfil financeiro', 'Objetivo, reserva e prazo.', 'perfil', true)}
       ${ferramenta('link', 'Conexões e extratos', 'Instituições e origem dos dados.', 'conexoes', true)}
@@ -254,11 +254,13 @@ const telas = (() => {
     const cores = [['Fundo', '#191C1F'], ['Superfície', '#24282C'], ['Texto', '#EEECE5'], ['Ação', '#A9BFDF'], ['Alerta', '#E8AD91']];
     return voltar('mais', 'Mais') + titulo('Sistema visual', 'Guia da prévia do OpenChris') + `<div class="two-col">
       <div class="stack"><section class="panel"><h2>Paleta</h2><div class="swatches">${cores.map(([nome, cor]) =>
-        `<div class="swatch"><span class="swatch-sample" style="background:${cor}"></span><strong>${nome}</strong><span class="sub">${cor}</span></div>`).join('')}</div></section>
+        `<div class="swatch"><span class="swatch-sample" style="background:${cor}"></span><strong>${nome}</strong><span class="sub">${cor}</span></div>`).join('')}</div>
+        <div class="material-sample titanio"><strong>Titânio escovado</strong><span>Cartão de patrimônio</span></div></section>
       <section class="panel"><h2>Source Sans 3</h2><div class="type-demo">${valorGrande(m.patrimonio)}<span class="sub">Patrimônio · peso 500</span>
         <h3>Lançamentos</h3><p>O gasto do mês reúne as compras até o dia 15.</p><span class="sub">15 de novembro · Texto de apoio</span></div></section></div>
       <div class="stack"><section class="panel"><h2>Ações e estados</h2><div class="button-line">
-        <button class="primary" data-dialog="previa">Alterar cenário</button><button class="secondary" data-dialog="perfil">Ver perfil</button>
+        <button class="primary" data-dialog="previa">Alterar cenário</button><button class="secondary" data-exemplo-notificacao>Testar notificação</button>
+        <button class="secondary" data-dialog="perfil">Ver perfil</button>
         <button class="secondary" disabled>Indisponível</button></div>
         <div class="section-gap">${aviso(m.fluxo('insuficiente'), true)}</div>
         <p class="empty">Nenhum lançamento neste período.</p>
@@ -293,7 +295,7 @@ const telas = (() => {
       <fieldset class="scenario-list"><legend>Cenário da conta</legend>${Object.entries(m.cenarios).map(([id, c]) =>
         `<label class="option-row"><input type="radio" name="cenario" value="${id}"${id === estado.cenario ? ' checked' : ''}>
         <span class="row-main"><strong>${c.nome}</strong><span class="sub">${c.detalhe}</span></span></label>`).join('')}</fieldset>
-      <div class="button-line scenario-actions"><button class="primary" data-fechar>Concluir</button>${link('sistema', 'Ver sistema visual')}</div>`];
+      <div class="button-line scenario-actions"><button class="primary" data-fechar="cenario">Concluir</button>${link('sistema', 'Ver sistema visual')}</div>`];
     if (tipo === 'chat') return ['Perguntar à IA', `<p class="sheet-copy">Conversa de exemplo com os dados fictícios da prévia.</p>
       <div id="conversa" role="log" aria-live="polite">${conversa('alimentacao', estado.cenario)}</div><div class="chat-choices" role="group" aria-label="Perguntas de exemplo">
       ${[['alimentacao', 'Meus gastos'], ['aporte', 'Meu aporte'], ['carteira', 'Minha carteira']].map(([id, nome]) =>

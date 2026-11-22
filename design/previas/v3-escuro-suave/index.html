@@ -6,11 +6,11 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#191c1f">
   <title>Hoje · OpenChris</title>
-  <link rel="icon" href="assets/marca.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="tema.css">
+  <link rel="icon" href="assets/marca.svg?v=titanio" type="image/svg+xml">
+  <link rel="stylesheet" href="tema.css?v=titanio">
   <script defer src="dados.js"></script>
-  <script defer src="telas.js"></script>
-  <script defer src="app.js"></script>
+  <script defer src="telas.js?v=titanio"></script>
+  <script defer src="app.js?v=titanio"></script>
 </head>
 <body>
   <svg xmlns="http://www.w3.org/2000/svg" class="symbols" aria-hidden="true" focusable="false">
@@ -50,7 +50,7 @@
   <a class="skip" href="#conteudo">Ir para o conteúdo</a>
   <div class="shell">
     <aside class="rail">
-      <a href="#hoje" class="brand rail-brand"><img src="assets/marca.svg" alt="">OpenChris</a>
+      <a href="#hoje" class="brand rail-brand"><img src="assets/marca.svg?v=titanio" alt="">OpenChris</a>
       <nav id="nav-principal" aria-label="Navegação principal"></nav>
       <div class="rail-foot">
         <a class="review-link" href="#sistema"><svg class="icon" aria-hidden="true"><use href="#i-layers"></use></svg>Sistema visual</a>
@@ -59,7 +59,7 @@
     </aside>
     <div class="workspace">
       <header class="topbar">
-        <a href="#hoje" class="brand mobile-brand"><img src="assets/marca.svg" alt="">OpenChris</a>
+        <a href="#hoje" class="brand mobile-brand"><img src="assets/marca.svg?v=titanio" alt="">OpenChris</a>
         <span class="top-date"><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>15 de novembro de 2026</span>
         <div class="top-actions">
           <button class="preview-button" data-dialog="previa" aria-label="Opções da prévia"><svg class="icon" aria-hidden="true"><use href="#i-sliders"></use></svg>Prévia</button>
@@ -73,5 +73,11 @@
     <div class="sheet-head"><h2 id="painel-titulo"></h2><button class="icon-button" data-fechar aria-label="Fechar"><svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button></div>
     <div id="painel-corpo"></div>
   </dialog>
+  <div class="toast" id="notificacao" inert>
+    <span class="toast-check" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+    <span id="notificacao-texto"></span>
+    <button type="button" class="icon-button" aria-label="Dispensar notificação"><svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg></button>
+  </div>
+  <div class="sr" id="notificacao-leitor" role="status" aria-atomic="true"></div>
 </body>
 </html>

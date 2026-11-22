@@ -4,10 +4,66 @@
   const nav = document.querySelector('#nav-principal');
   const modal = document.querySelector('#painel');
   const corpoModal = document.querySelector('#painel-corpo');
+  const notificacao = document.querySelector('#notificacao');
+  const textoNotificacao = document.querySelector('#notificacao-texto');
+  const leituraNotificacao = document.querySelector('#notificacao-leitor');
+  const movimentoPermitido = matchMedia('(prefers-reduced-motion: no-preference)');
   const estado = { cenario: 'completo', classe: 'todas', busca: '', simulado: null, modoCalc: 'juros' };
   let rotaAtual = '';
   let proximoFoco = '';
   let origemModal;
+  let cenarioAoAbrir;
+  let origemNotificacao;
+  let temporizadorNotificacao;
+  let ponteiroNaNotificacao = false;
+
+  function dispensarNotificacao() {
+    clearTimeout(temporizadorNotificacao);
+    if (notificacao.inert) return;
+    const devolverFoco = notificacao.contains(document.activeElement);
+    notificacao.inert = true;
+    document.removeEventListener('pointermove', acompanharPonteiro);
+    ponteiroNaNotificacao = false;
+    leituraNotificacao.replaceChildren();
+    if (devolverFoco) (origemNotificacao?.isConnected ? origemNotificacao : main).focus({ preventScroll: true });
+  }
+
+  function agendarFechamento() {
+    clearTimeout(temporizadorNotificacao);
+    if (!notificacao.inert && !document.hidden && !ponteiroNaNotificacao && !notificacao.matches(':focus-within')) {
+      temporizadorNotificacao = setTimeout(dispensarNotificacao, 6000);
+    }
+  }
+
+  function acompanharPonteiro(e) {
+    if (e.pointerType === 'touch') return;
+    const area = notificacao.getBoundingClientRect();
+    const dentro = e.clientX >= area.left && e.clientX <= area.right && e.clientY >= area.top && e.clientY <= area.bottom;
+    if (dentro === ponteiroNaNotificacao) return;
+    ponteiroNaNotificacao = dentro;
+    agendarFechamento();
+  }
+
+  function notificar(mensagem, origem) {
+    origemNotificacao = origem;
+    textoNotificacao.textContent = mensagem;
+    notificacao.classList.remove('no-topo');
+    const area = notificacao.getBoundingClientRect();
+    const cobreAcao = Array.from(main.querySelectorAll('form .button-line')).some(grupo => {
+      const r = grupo.getBoundingClientRect();
+      return r.bottom > area.top - 8 && r.top < area.bottom + 8 && r.right > area.left && r.left < area.right;
+    });
+    notificacao.classList.toggle('no-topo', cobreAcao);
+    notificacao.inert = false;
+    leituraNotificacao.replaceChildren(document.createTextNode(mensagem));
+    document.addEventListener('pointermove', acompanharPonteiro, { passive: true });
+    agendarFechamento();
+  }
+
+  notificacao.querySelector('button').addEventListener('click', dispensarNotificacao);
+  notificacao.addEventListener('focusin', () => clearTimeout(temporizadorNotificacao));
+  notificacao.addEventListener('focusout', () => queueMicrotask(agendarFechamento));
+  document.addEventListener('visibilitychange', agendarFechamento);
 
   function endereco() {
     const [nome, consulta = ''] = location.hash.slice(1).split('?');
@@ -29,6 +85,9 @@
 
   function render(mover = false) {
     const { nome, params } = endereco();
+    const mudouDeTela = Boolean(rotaAtual && rotaAtual !== nome);
+    if (mudouDeTela) dispensarNotificacao();
+    main.classList.toggle('troca-de-tela', mudouDeTela);
     if (rotaAtual === 'calculadoras' && nome !== rotaAtual) estado.modoCalc = 'juros';
     rotaAtual = nome;
     let conteudo;
@@ -61,6 +120,8 @@
   function abrirModal(botao) {
     const painel = telas.painel(botao.dataset.dialog, botao.dataset, estado);
     if (!painel) return;
+    dispensarNotificacao();
+    cenarioAoAbrir = estado.cenario;
     origemModal = botao;
     document.querySelector('#painel-titulo').textContent = painel[0];
     corpoModal.innerHTML = painel[1];
@@ -78,8 +139,26 @@
 
   function recalcularAporte(valor) {
     const disponivel = modelo.fluxo(estado.cenario).disponivel;
+    const distribuicao = main.querySelector('#distribuicao');
+    const proporcoes = new Map();
+    if (movimentoPermitido.matches) {
+      for (const barra of distribuicao.querySelectorAll('[data-parcela]')) {
+        const trilho = barra.parentElement.getBoundingClientRect().width;
+        if (trilho > 0) proporcoes.set(barra.dataset.parcela, barra.getBoundingClientRect().width / trilho);
+      }
+    }
     estado.simulado = valor;
-    main.querySelector('#distribuicao').innerHTML = telas.distribuicao(valor ?? disponivel, disponivel);
+    distribuicao.innerHTML = telas.distribuicao(valor ?? disponivel, disponivel);
+    if (movimentoPermitido.matches) {
+      for (const barra of distribuicao.querySelectorAll('[data-parcela]')) {
+        const nova = parseFloat(barra.style.width) / 100;
+        const anterior = proporcoes.get(barra.dataset.parcela) ?? 0;
+        if (nova > 0) {
+          barra.style.setProperty('--escala-anterior', anterior / nova);
+          barra.classList.add('parcela-atualizada');
+        }
+      }
+    }
     main.querySelector('[data-repor-aporte]').hidden = valor === null;
   }
 
@@ -103,6 +182,11 @@
     }
     if (el.hasAttribute('data-fechar')) {
       modal.close();
+      if (el.dataset.fechar === 'cenario' && cenarioAoAbrir !== estado.cenario) {
+        notificar('Cenário aplicado · ' + modelo.cenarios[estado.cenario].nome, origemModal);
+      }
+    } else if (el.hasAttribute('data-exemplo-notificacao')) {
+      notificar('Notificação de exemplo.', el);
     } else if (el.dataset.dialog) {
       abrirModal(el);
     } else if (el.hasAttribute('data-limpar-filtro')) {
@@ -130,6 +214,7 @@
       entrada.removeAttribute('aria-invalid');
       main.querySelector('#erro-aporte').textContent = '';
       entrada.focus({ preventScroll: true });
+      notificar('Valor inicial restaurado.', entrada);
     }
   });
 
@@ -175,6 +260,7 @@
       estado.busca = el.value;
       filtrarPosicoes();
     } else if (el.id === 'valor-aporte') {
+      dispensarNotificacao();
       el.removeAttribute('aria-invalid');
       main.querySelector('#erro-aporte').textContent = '';
     } else if (el.closest('#form-calc')) {
@@ -195,6 +281,7 @@
       const valor = modelo.lerNumero(valores.aporte);
       const entrada = form.elements.aporte;
       if (valor === null || !Number.isFinite(valor) || valor < 0 || valor > 999999999999.99) {
+        dispensarNotificacao();
         entrada.setAttribute('aria-invalid', 'true');
         form.querySelector('#erro-aporte').textContent = 'Informe um valor válido de R$ 0 até R$ 999.999.999.999,99.';
         entrada.focus();
@@ -203,6 +290,7 @@
       entrada.removeAttribute('aria-invalid');
       form.querySelector('#erro-aporte').textContent = '';
       recalcularAporte(valor);
+      notificar('Simulação de ' + telas.moeda(valor) + ' recalculada.', e.submitter || entrada);
     } else if (form.id === 'form-calc') {
       limparResultadoCalc();
       try {
