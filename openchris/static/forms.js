@@ -226,10 +226,10 @@ export function importForm(conn, kind) {
 }
 export function connections(conn) {
   const fmtItem = (i) =>
-    /* HTML */ `<article class="asset">
-      <h3>${esc(i.name || i.institution || 'Conexão bancária')}</h3>
+    /* HTML */ `<article class="asset bank-connection">
+      <h3>${esc(i.name || 'Instituição não identificada')}</h3>
       <p class="note">
-        ${esc(i.status || 'Sem status')}${i.updated_at ? ' · ' + date(i.updated_at, { dateStyle: 'short', timeStyle: 'short' }) : ''}
+        ${esc(i.no_data ? 'Nenhum dado bancário retornado' : i.status || 'Sem status')}${i.updated_at ? ' · ' + date(i.updated_at, { dateStyle: 'short', timeStyle: 'short' }) : ''}
       </p>
       <small class="note">ID ${esc(i.id)}</small>
     </article>`;

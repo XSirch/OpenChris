@@ -7,6 +7,7 @@ import re
 import time
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
+from functools import lru_cache
 from threading import Lock
 from uuid import UUID
 
@@ -20,6 +21,9 @@ from .finance import INVESTMENT_INCOME, Entry, Position, upsert_entry, upsert_po
 
 bp = Blueprint("banking", __name__)
 BASE_URL = "https://api.pluggy.ai"
+BANK_DIRECTORY = "https://www.bcb.gov.br/content/estabilidadefinanceira/str1/ParticipantesSTR.csv"
+BANK_LABELS = {"208": "BTG Pactual", "260": "Nubank", "341": "Itaú"}
+MULTIPLE_INSTITUTIONS = "Várias instituições"
 PRODUCTS = ["ACCOUNTS", "CREDIT_CARDS", "TRANSACTIONS", "INVESTMENTS"]
 COLUMNS = {
     "positions": ["external_id", "name", "identifier", "asset_class", "value", "institution",
@@ -194,6 +198,59 @@ def allowed_ids():
     return {str(UUID(value.strip())) for value in os.getenv("PLUGGY_ITEM_IDS", "").split(",") if value.strip()}
 
 
+def _is_meu_pluggy(name):
+    return isinstance(name, str) and "".join(name.casefold().split()) == "meupluggy"
+
+
+def _institution_name(value):
+    if not isinstance(value, str) or _is_meu_pluggy(value) or value.strip().casefold() == "instituição conectada":
+        return ""
+    return " ".join(value.split())[:180]
+
+
+@lru_cache(maxsize=1)
+def _bank_directory(_day):
+    try:
+        response = requests.get(BANK_DIRECTORY, timeout=(3, 5))
+        response.raise_for_status()
+        rows = csv.DictReader(io.StringIO(response.content.decode("utf-8-sig")))
+        return {row["Número_Código"]: name for row in rows
+                if re.fullmatch(r"[0-9]{3}", row.get("Número_Código") or "")
+                and (name := _institution_name(row.get("Nome_Reduzido")))}
+    except (requests.RequestException, UnicodeError, csv.Error):
+        return {}
+
+
+def _investment_institution(raw):
+    detail = raw.get("institution")
+    return _institution_name(detail.get("name")) if isinstance(detail, dict) else ""
+
+
+def _connection_institutions(connector_name, accounts, investments):
+    direct_name = _institution_name(connector_name)
+    if direct_name:
+        return direct_name, direct_name
+
+    codes = set()
+    for account in accounts:
+        bank = account.get("bankData")
+        transfer = bank.get("transferNumber") if isinstance(bank, dict) and account.get("type") == "BANK" else None
+        if isinstance(transfer, str) and (match := re.fullmatch(r"([0-9]{3})/[^/]+/[^/]+", transfer.strip())):
+            codes.add(match[1])
+    if codes:
+        directory = _bank_directory(datetime.now(timezone.utc).date()) if codes.difference(BANK_LABELS) else {}
+        names = sorted({BANK_LABELS.get(code) or directory.get(code, "") for code in codes})
+        if len(codes) == 1:
+            return names[0], names[0]
+        joined = ", ".join(names)
+        return (joined if "" not in names and len(joined) <= 180 else MULTIPLE_INSTITUTIONS), ""
+
+    names = sorted({name for row in investments if (name := _investment_institution(row))})
+    if len(names) == 1:
+        return names[0], names[0]
+    return (MULTIPLE_INSTITUTIONS if names else ""), ""
+
+
 def _position(raw, institution, updated_at):
     subtype = raw.get("subtype") or ""
     classes = {"REAL_ESTATE_FUND": "Fundos imobiliários", "ETF": "ETFs", "STOCK": "Ações",
@@ -205,7 +262,8 @@ def _position(raw, institution, updated_at):
             "name": name, "asset_class": classes.get(subtype) or classes.get(raw.get("type"), ""),
             "issuer": raw.get("issuer") or "", "indexer": raw.get("rateType") or "",
             "maturity": str(raw["dueDate"])[:10] if raw.get("dueDate") else None,
-            "institution": institution, "value": raw.get("balance") if active else (raw.get("balance") or 0),
+            "institution": _investment_institution(raw) or institution,
+            "value": raw.get("balance") if active else (raw.get("balance") or 0),
             "currency": raw["currencyCode"], "updated_at": raw.get("updatedAt") or updated_at, "active": active}
 
 
@@ -294,10 +352,10 @@ def sync_item(item_id):
         return
     reported = set(meta["products"]) if isinstance(meta.get("products"), list) else set(PRODUCTS)
     connector = meta.get("connector") or {}
-    reads_positions = "INVESTMENTS" in reported or (connector.get("name") == "MeuPluggy"
+    reads_positions = "INVESTMENTS" in reported or (_is_meu_pluggy(connector.get("name"))
                       and "INVESTMENTS" in (connector.get("products") or []))
     accounts, bills, entries = [], {}, []
-    account_rows = _records("/accounts", {"itemId": item_id}) if reported.intersection(PRODUCTS[:3]) else ()
+    account_rows = list(_records("/accounts", {"itemId": item_id})) if reported.intersection(PRODUCTS[:3]) else []
     for account in account_rows:
         aid = account["id"]
         data = {"id": aid, "type": account["type"], "currency": account.get("currencyCode"),
@@ -315,12 +373,12 @@ def sync_item(item_id):
             row = _entry(raw, data, bills)
             if row and row["amount"] > 0:
                 entries.append(row)
-    institution = (meta.get("connector") or {}).get("name") or "Instituição conectada"
-    positions = [_position(raw, institution, meta.get("lastUpdatedAt"))
-                 for raw in _records("/investments", {"itemId": item_id})] if reads_positions else []
+    investment_rows = list(_records("/investments", {"itemId": item_id})) if reads_positions else []
+    name, investment_institution = _connection_institutions(connector.get("name"), account_rows, investment_rows)
     with db_session() as db:
         _lock_import(db)
         conn = db.get(Connection, item_id)
+        positions = [_position(raw, investment_institution, meta.get("lastUpdatedAt")) for raw in investment_rows]
         old_snapshot = conn.snapshot or {}
         other_positions = set()
         other_entries = set()
@@ -353,7 +411,7 @@ def sync_item(item_id):
             for old in db.scalars(select(Entry).where(Entry.external_id.in_(missing))):
                 if old.account_id in earliest_by_account and old.booked_on >= earliest_by_account[old.account_id]:
                     old.active = False
-        conn.name = institution
+        conn.name = name or _institution_name(conn.name)
         conn.snapshot = {"accounts": accounts, "bills": list(bills.values()),
                          "source_updated_at": meta.get("lastUpdatedAt"),
                          "forecast_complete": {"ACCOUNTS", "TRANSACTIONS", "CREDIT_CARDS"} <= set(meta.get("products") or []),
@@ -390,8 +448,12 @@ def sync_due():
 @bp.get("/api/connections")
 def connections():
     with db_session() as db:
-        items = [{"id": i.id, "name": i.name, "status": i.status,
-                  "updated_at": i.updated_at.isoformat() if i.updated_at else None} for i in db.scalars(select(Connection))]
+        items = []
+        for item in db.scalars(select(Connection)):
+            no_data = (item.snapshot is not None and item.status == "Atualizada"
+                       and not any(item.snapshot.get(key) for key in ("accounts", "bills", "entries", "positions")))
+            items.append({"id": item.id, "name": _institution_name(item.name), "status": item.status, "no_data": no_data,
+                          "updated_at": item.updated_at.isoformat() if item.updated_at else None})
     return jsonify(pluggy_configured=configured(), items=items, csv_columns=COLUMNS)
 
 
@@ -426,7 +488,7 @@ def connect():
     with db_session() as db:
         item = db.get(Connection, item_id)
         if not item:
-            db.add(Connection(id=item_id, name=(meta.get("connector") or {}).get("name", "")))
+            db.add(Connection(id=item_id, name=_institution_name((meta.get("connector") or {}).get("name"))))
         else:
             item.attempted_at = None
     return jsonify(status="queued"), 202

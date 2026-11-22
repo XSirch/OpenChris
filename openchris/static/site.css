@@ -121,6 +121,7 @@ details > summary::-webkit-details-marker { display: none; }
 .inset { background: var(--surface); border-radius: 6px; padding: 12px 14px; }
 .asset,.entry { padding: 13px 0; border-top: 1px solid var(--line); }
 .asset:first-child { border: 0; }
+.bank-connection { overflow-wrap: anywhere; }
 .meta { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 2px 13px; font-size: .9rem; color: var(--muted); }
 .meta dt,.meta dd { display: inline; }
 .meta dt:after { content: " · "; }

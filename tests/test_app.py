@@ -97,6 +97,62 @@ def test_repeated_bank_read_and_partial_snapshot(client, monkeypatch):
         assert not cash["balance_fresh"] and not cash["forecast_complete"]
 
 
+def test_meu_pluggy_uses_account_codes_and_investment_holders(client, monkeypatch):
+    items = {str(n): label for n, label in enumerate(("Nubank", "Itaú", "BTG Pactual", "", "Corretora Exemplo", "Banco Direto"))}
+    with db_session() as db:
+        db.add_all(banking.Connection(id=item, name="MeuPluggy") for item in items)
+
+    def metadata(item):
+        return {"status": "UPDATED", "products": ["ACCOUNTS", "INVESTMENTS"],
+                "connector": {"name": "Banco Direto" if item == "5" else "MeuPluggy"}}
+
+    def records(path, params, **_kwargs):
+        item = params.get("itemId")
+        if path == "/accounts":
+            code = {"0": "260", "1": "341", "2": "208", "5": "260"}.get(item)
+            return [{"id": f"a:{item}", "type": "BANK", "balance": 10, "currencyCode": "BRL",
+                     "bankData": {"transferNumber": f"{code}/0001/111-1"}}] if code else []
+        if path == "/investments" and item != "3":
+            return [{"id": f"i:{item}", "name": "Título", "currencyCode": "BRL", "type": "FIXED_INCOME", "balance": 50,
+                     "issuer": "Emissor Teste", "institution": {"name": "Corretora Exemplo"} if item == "4" else None}]
+        return []
+
+    monkeypatch.setattr(banking, "_read_item", metadata)
+    monkeypatch.setattr(banking, "_records", records)
+    for i in items:
+        banking.sync_item(i)
+
+    login(client)
+    result = {row["id"]: row for row in client.get("/api/connections").json["items"]}
+    assert {key: row["name"] for key, row in result.items()} == items
+    assert {key for key, row in result.items() if row["no_data"]} == {"3"}
+    with db_session() as db:
+        assert {p.external_id: p.institution for p in db.scalars(select(Position))} == {
+            f"pluggy:i:{key}": name for key, name in items.items() if name}
+
+
+def test_meu_pluggy_resolves_other_codes_from_banco_central(monkeypatch):
+    class DirectoryResponse:
+        content = "Número_Código,Nome_Reduzido\n348,Banco XP\n102,XP Investimentos\n".encode("utf-8-sig")
+
+        def raise_for_status(self):
+            pass
+
+    def directory(url, **_kwargs):
+        assert url == banking.BANK_DIRECTORY
+        return DirectoryResponse()
+
+    monkeypatch.setattr(banking.requests, "get", directory)
+    banking._bank_directory.cache_clear()
+    try:
+        bank = {"type": "BANK", "bankData": {"transferNumber": "348/0001/111-1"}}
+        broker = {"type": "BANK", "bankData": {"transferNumber": "102/0001/222-2"}}
+        assert banking._connection_institutions("Meu Pluggy", [bank], []) == ("Banco XP", "Banco XP")
+        assert banking._connection_institutions("Meu Pluggy", [bank, broker], []) == ("Banco XP, XP Investimentos", "")
+    finally:
+        banking._bank_directory.cache_clear()
+
+
 @pytest.mark.parametrize("bank_first", [True, False])
 @pytest.mark.parametrize("csv_id", ["i", "outro-id"])
 def test_csv_and_provider_are_one_holding(client, bank_first, csv_id):
