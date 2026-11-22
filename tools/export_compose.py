@@ -37,13 +37,16 @@ def render():
     copies = {
         "COPY requirements.txt .": "COPY <<'REQUIREMENTS' requirements.txt\n" + requirements.rstrip("\n") + "\nREQUIREMENTS",
         "COPY openchris/ openchris/": "\n".join((
+            "COPY <<'OPENCHRIS_SOURCE' /tmp/openchris-source.b64",
+            textwrap.fill(source_archive(), width=96),
+            "OPENCHRIS_SOURCE",
             "RUN python - <<'PYTHON'",
             "import base64, io, tarfile",
-            "source = '''",
-            textwrap.fill(source_archive(), width=96),
-            "'''",
-            "with tarfile.open(fileobj=io.BytesIO(base64.b64decode(source)), mode='r:gz') as archive:",
+            "from pathlib import Path",
+            "source = Path('/tmp/openchris-source.b64')",
+            "with tarfile.open(fileobj=io.BytesIO(base64.b64decode(source.read_bytes())), mode='r:gz') as archive:",
             "    archive.extractall('.', filter='data')",
+            "source.unlink()",
             "PYTHON",
         )),
     }

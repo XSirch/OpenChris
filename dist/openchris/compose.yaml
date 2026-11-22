@@ -21,9 +21,7 @@ x-build: &openchris-build
     RUN pip install --no-cache-dir -r requirements.txt \
      && useradd --create-home --uid 10001 openchris \
      && install -d -o openchris -g openchris -m 0700 /var/lib/openchris /var/lib/codex
-    RUN python - <<'PYTHON'
-    import base64, io, tarfile
-    source = '''
+    COPY <<'OPENCHRIS_SOURCE' /tmp/openchris-source.b64
     H4sIAAAAAAAC/+y9W3Pj1rUwmGf+CgSncgy2KYpSq28a0/nUktpWrJZ6JLVPEpkfCiIgCW4SoAFSalnRH5mn8XwPqZyqPGWm
     piqPoz8267ZvAEhRHR+fb+akU7FAYN/32muv+8onSTa8LNJyNQzTLJ2GYXdy86uf918P/j3f2KC/8K/6t9fbeGae8f3aem/j
     xa+83q9+gX+zchoV0P2v/mv+833/EEBgG0Gg452nWZTd/zkqvUlSlnmUll0o0PrVP//9//Vfbp3/cZRm/wnnf31tba12/tc3
@@ -3665,9 +3663,14 @@ x-build: &openchris-build
     lA+oIY9LycADUcuMR+c7sLb9+JNIcSVa5bb4mDrmHQpPmuTMiA/nv8Ka+wo27xV8zitw7iqseasQ58zfCCaq3CyMgnLFfPhU
     DL9MhGYnD3xCNPOhWL/NkM1OLg5NXpPX5DV5TV6T1+Q1eU1ek9fkNXlNXpPX5DV5TV6T1+Q1eU1ek9fkNXlNXpPX5DV5TV6T
     1+Q1eU1ek9fkNXlNXpPXP/f6fyx8bG4AqAcA
-    '''
-    with tarfile.open(fileobj=io.BytesIO(base64.b64decode(source)), mode='r:gz') as archive:
+    OPENCHRIS_SOURCE
+    RUN python - <<'PYTHON'
+    import base64, io, tarfile
+    from pathlib import Path
+    source = Path('/tmp/openchris-source.b64')
+    with tarfile.open(fileobj=io.BytesIO(base64.b64decode(source.read_bytes())), mode='r:gz') as archive:
         archive.extractall('.', filter='data')
+    source.unlink()
     PYTHON
     USER openchris
     ENV OPENCHRIS_STATE=/var/lib/openchris

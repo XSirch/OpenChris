@@ -20,6 +20,19 @@ def test_easypanel_release_contains_current_application():
         assert {item.name: tar.extractfile(item).read() for item in tar} == files
 
 
+def test_easypanel_inline_build_does_not_exceed_linux_exec_argument_limit():
+    compose = render()
+    heredocs = re.finditer(
+        r"(?ms)^    RUN [^\n]*<<'?(?P<delimiter>[A-Za-z_][A-Za-z_0-9]*)'?\s*\n"
+        r"(?P<body>.*?)^    (?P=delimiter)\s*$",
+        compose,
+    )
+    for heredoc in heredocs:
+        assert len(heredoc.group(0).encode("utf-8")) < 120_000, (
+            "An inline RUN instruction exceeds the safe Linux exec argument size"
+        )
+
+
 def test_frontend_assets_share_a_cache_revision():
     templates = ROOT / "openchris" / "templates"
     static = ROOT / "openchris" / "static"
