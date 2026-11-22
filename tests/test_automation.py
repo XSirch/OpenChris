@@ -16,7 +16,6 @@ from openchris.db import Base, db_session, engine
 def site(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite:///" + str(tmp_path / "automation.db"))
     monkeypatch.setenv("CODEX_ENABLED", "1")
-    monkeypatch.setenv("CODEX_DAILY_LIMIT", "12")
     monkeypatch.delenv("TELEGRAM_ENABLED", raising=False)
     monkeypatch.setattr(jobs, "FEEDS", {})
     monkeypatch.setattr(jobs, "model_catalog", lambda: {"model-test": {"efforts": ["low", "high"], "default": "low"}})
@@ -57,8 +56,8 @@ def test_finance_chat_uses_worker_and_financial_context(site, monkeypatch):
     assert (message["state"], message["answer"]) == ("done", "O gasto foi de R$ 92,31.")
 
 
-def test_finance_chat_runs_after_background_quota_is_exhausted(site, monkeypatch):
-    monkeypatch.setenv("CODEX_DAILY_LIMIT", "1")
+def test_chat_and_background_tasks_ignore_previous_daily_limit(site, monkeypatch):
+    monkeypatch.setenv("CODEX_DAILY_LIMIT", "0")
     quota_key = "quota:" + jobs.day().isoformat()
     with db_session() as db:
         worker = jobs.runtime(db, "worker")
@@ -73,15 +72,20 @@ def test_finance_chat_runs_after_background_quota_is_exhausted(site, monkeypatch
     assert site.post("/api/finance-chat", json={"question": "Quanto gastei?", "month": jobs.day().strftime("%Y-%m")}).status_code == 202
     assert site.get("/api/finance-chat").json["waiting"] == ""
 
+    calls = []
+
     def answer(kind, context, **kwargs):
-        assert kind == "chat"
-        return {"answer": "Resposta de teste."}
+        calls.append(kind)
+        if kind == "chat":
+            return {"answer": "Resposta de teste."}
+        return {"items": [dict(id=context[0]["id"], kind="expense", category="Mercado", confident=True)]}
 
     monkeypatch.setattr(jobs, "codex_result", answer)
     assert jobs.run_one()
-    assert not jobs.run_one()
+    assert jobs.run_one()
+    assert calls == ["chat", "expense"]
     assert site.get("/api/finance-chat").json["messages"][0]["answer"] == "Resposta de teste."
-    assert "rotinas automáticas" in site.get("/api/agents").json["notice"]
+    assert site.get("/api/agents").json["notice"] == ""
     with db_session() as db:
         assert db.get(jobs.Runtime, quota_key).count == 1
 
@@ -158,7 +162,6 @@ def test_role_settings_apply_at_dispatch_and_survive_restart(site, monkeypatch):
     with db_session() as db:
         job = db.scalar(select(jobs.Job))
         assert job.state == "retry" and job.attempts == 0
-        assert db.get(jobs.Runtime, "quota:" + jobs.day().isoformat()) is None
         db.get(jobs.CodexSettings, 1).refresh_after = jobs.now()
     jobs.refresh_models()
     assert site.post(url, json=explicit).status_code == 200
@@ -202,15 +205,10 @@ def test_batch_preserves_manual_changes_and_pending(site, monkeypatch):
     assert site.get("/api/agents").json["enabled"] is True
 
 
-def test_quota_retry_and_restart(site, monkeypatch):
+def test_pause_retry_and_restart(site, monkeypatch):
     with db_session() as db:
         entry(db, "Teste", 1)
-    monkeypatch.setenv("CODEX_DAILY_LIMIT", "0")
-    jobs.tick()
-    assert site.get("/api/agents").json["queue"]["pending"] == 1
-    monkeypatch.setenv("CODEX_DAILY_LIMIT", "2")
-    with db_session() as db:
-        db.get(jobs.Runtime, "codex").until = jobs.now() - timedelta(seconds=1)
+
     def limit(*args):
         raise runner.AgentPause("Renove o login.", 30)
     monkeypatch.setattr(jobs, "codex_result", limit)
@@ -219,7 +217,6 @@ def test_quota_retry_and_restart(site, monkeypatch):
     with db_session() as db:
         row = db.scalar(select(jobs.Job))
         assert row.state == "retry" and row.attempts == 1
-        assert db.get(jobs.Runtime, "quota:" + jobs.day().isoformat()).count == 1
         row.state, row.ready_at = "running", jobs.now() - timedelta(minutes=1)
         db.get(jobs.Runtime, "codex").until = jobs.now() - timedelta(seconds=1)
     monkeypatch.setattr(jobs, "codex_result", lambda k, data: {
@@ -228,11 +225,10 @@ def test_quota_retry_and_restart(site, monkeypatch):
     assert site.get("/api/agents").json["queue"]["done"] == 1
 
 
-def test_login_preflight_refunds_one_reservation_for_whole_batch(site, monkeypatch):
+def test_login_preflight_keeps_all_jobs_in_the_batch_pending_retry(site, monkeypatch):
     with db_session() as db:
         entry(db, "Primeira compra", 1)
         entry(db, "Segunda compra", 2)
-    monkeypatch.setenv("CODEX_DAILY_LIMIT", "1")
     monkeypatch.setattr(jobs, "codex_result", runner.codex_result)
     monkeypatch.setattr(runner.shutil, "which", lambda name: "/usr/bin/codex")
     def missing_login(args, **kwargs):
@@ -241,7 +237,6 @@ def test_login_preflight_refunds_one_reservation_for_whole_batch(site, monkeypat
     monkeypatch.setattr(runner.subprocess, "run", missing_login)
     jobs.tick()
     with db_session() as db:
-        assert db.get(jobs.Runtime, "quota:" + jobs.day().isoformat()).count == 0
         assert [row.state for row in db.scalars(select(jobs.Job))] == ["retry", "retry"]
     assert "ChatGPT" in site.get("/api/agents").json["notice"]
 

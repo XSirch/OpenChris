@@ -16,7 +16,7 @@ from sqlalchemy import JSON, Date, DateTime, String, func, or_, select, update
 from sqlalchemy.orm import Mapped, mapped_column
 
 from . import finance
-from .agent_runner import (AgentPause, ModelUnavailable, OFFICIAL_DOMAINS, PreflightPause, SCHEMAS, codex_result,
+from .agent_runner import (AgentPause, ModelUnavailable, OFFICIAL_DOMAINS, SCHEMAS, codex_result,
                            model_catalog, normalized, source_hosts, validate_result, verify_fields)
 from .db import Base, db_session
 from .economy import FEEDS
@@ -24,7 +24,6 @@ from .economy import FEEDS
 bp = Blueprint("automation", __name__)
 LOCAL = ZoneInfo("America/Sao_Paulo")
 LEGACY_DAILY_LIMIT_NOTICE = "O limite diário de execuções foi atingido. A fila retoma à meia-noite de Brasília."
-BACKGROUND_LIMIT_NOTICE = "As rotinas automáticas atingiram o limite diário do OpenChris. Elas voltam à meia-noite de Brasília."
 AGENTS = {"expense": "Classificação de gastos", "classify": "Classificação de investimentos",
           "asset": "Pesquisa de ativos", "macro": "Economia", "risk": "Risco da carteira",
           "report": "Síntese dos especialistas", "chat": "Chat financeiro"}
@@ -463,7 +462,6 @@ def run_one():
         context = prepare(db, jobs)
         if not jobs:
             return True
-        quota = None
         if kind != "telegram":
             control = runtime(db, "codex")
             if control.notice == LEGACY_DAILY_LIMIT_NOTICE:
@@ -476,13 +474,6 @@ def run_one():
                 for job in jobs:
                     job.state, job.ready_at, job.notice = "retry", now() + timedelta(hours=1), model_notice(kind)
                 return True
-            if kind != "chat":
-                quota = runtime(db, "quota:" + day().isoformat())
-                if quota.count >= max(0, int(os.getenv("CODEX_DAILY_LIMIT", "12"))):
-                    quota.notice = BACKGROUND_LIMIT_NOTICE
-                    return False
-                quota.count += 1
-                quota.notice = ""
         for job in jobs:
             job.state, job.attempts, job.ready_at = "running", job.attempts + 1, now() + timedelta(minutes=15)
             job.notice = ""
@@ -502,8 +493,6 @@ def run_one():
                 control.checked_at, control.notice, control.until = now(), "", None
     except Exception as error:
         with db_session() as db:
-            if quota is not None and isinstance(error, (PreflightPause, ModelUnavailable)):
-                db.get(Runtime, quota.key).count -= 1
             for key in ids:
                 job = db.get(Job, key)
                 pause = isinstance(error, AgentPause)
@@ -597,7 +586,6 @@ def agents_api():
     with db_session() as db:
         settings = db.get(CodexSettings, 1)
         control = db.get(Runtime, "codex")
-        quota = db.get(Runtime, "quota:" + day().isoformat())
         worker = db.get(Runtime, "worker")
         queue = {state: 0 for state in ("pending", "running", "done", "retry", "uncertain")}
         queue.update(dict(db.execute(select(Job.state, func.count()).group_by(Job.state)).all()))
@@ -607,7 +595,7 @@ def agents_api():
                        roles=AGENTS, models=settings.models if settings else {},
                        preferences=settings.preferences if settings else {},
                        last_success=iso(control.checked_at) if control else None,
-                       notice=active_codex_notice(control) or (quota.notice if quota else "") or latest or "")
+                       notice=active_codex_notice(control) or latest or "")
 
 
 @bp.post("/api/agents/<kind>/settings")
