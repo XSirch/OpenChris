@@ -1,4 +1,4 @@
-import { date, esc, has, money, note } from './ui.js?v=carbono-3';
+import { date, esc, has, money, note } from './ui.js?v=carbono-4';
 
 const references = {
   cdi: ['CDI', '#87cfc1', [9, 5]],

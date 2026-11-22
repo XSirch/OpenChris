@@ -1,8 +1,8 @@
-import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono-3';
-import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono-3';
-import { mountPerformance } from './performance.js?v=carbono-3';
-import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono-3';
-import { documentsView, uploadDocumentForm, deleteDocumentForm, chatDocumentChoices, chatDocumentReferences } from './documents.js?v=carbono-3';
+import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono-4';
+import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono-4';
+import { mountPerformance } from './performance.js?v=carbono-4';
+import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono-4';
+import { documentsView, uploadDocumentForm, deleteDocumentForm, chatDocumentChoices, chatDocumentReferences } from './documents.js?v=carbono-4';
 import {
   advanceForm,
   linkChargeForm,
@@ -14,7 +14,7 @@ import {
   positionForm,
   profileForm,
   targetsForm,
-} from './forms.js?v=carbono-3';
+} from './forms.js?v=carbono-4';
 
 const titles = {
   hoje: 'Hoje',
@@ -329,13 +329,21 @@ async function openAction(key, node) {
   const id = node?.dataset.id;
   if (key === 'finance-chat') {
     const chat = dialog('Chat financeiro', `
-      <p class="dialog-copy">Pergunte sobre seus gastos, carteira, aportes ou as pesquisas da aba Economia. As conversas ficam no OpenChris.</p>
-      <div class="stack tight finance-chat" data-chat-log role="log" aria-label="Conversa financeira"></div>
-      <form data-form="finance-chat">
-        <label class="field">Sua pergunta <textarea name="question" rows="3" maxlength="1000" required></textarea></label>
-        <div class="chat-document-control" data-chat-documents>${link('documentos', 'Gerenciar documentos')}</div>
-        <button type="submit" class="primary block">Enviar pergunta</button>
-      </form>`);
+      <form class="chat-composer" data-form="finance-chat">
+        <label class="field">Sua pergunta <textarea name="question" rows="2" maxlength="1000" required></textarea></label>
+        <div class="chat-document-control" data-chat-documents></div>
+        <div class="chat-actions">
+          ${link('documentos', 'Gerenciar documentos')}
+          <button type="submit" class="primary" disabled>Enviar pergunta</button>
+        </div>
+      </form>
+      <section class="finance-chat" data-chat-thread aria-label="Conversa financeira" tabindex="0" hidden>
+        <details class="accordion chat-history" data-chat-history hidden>
+          <summary><strong>Conversas anteriores</strong><span class="note" data-chat-count></span>${icon('down', 16, 'rotate')}</summary>
+          <div class="stack tight" data-chat-archive></div>
+        </details>
+        <div data-chat-log role="log" aria-label="Conversa mais recente"></div>
+      </section>`);
     void loadChatDocuments(chat);
     await refreshFinanceChat(chat);
     return;
@@ -727,29 +735,48 @@ async function loadChatDocuments(id) {
   }
 }
 
+function chatExchange(message, waiting) {
+  const references = message.references?.length
+    ? `<p class="note">Pesquisas citadas</p><ul class="chat-references">${message.references.map(ref =>
+        `<li>${link('economia?evento=' + encodeURIComponent(ref.id), esc(ref.title) + ' · ' + date(ref.date))}</li>`
+      ).join('')}</ul>`
+    : '';
+  const status = message.state === 'running' ? 'Preparando a resposta…'
+    : message.state === 'failed' ? message.notice || 'Envie a pergunta novamente.'
+      : waiting || message.notice || 'Pergunta na fila…';
+  return `<div class="inset"><p><strong>Você · ${esc(message.month.split('-').reverse().join('/'))}</strong></p>
+    <p class="chat-text">${esc(message.question)}</p>
+    ${message.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(message.answer)}</p>${references}
+      ${chatDocumentReferences(message.document_references)}
+      ${message.document_notice ? '<p class="note">' + esc(message.document_notice) + '</p>' : ''}`
+      : `<p class="note">${esc(status)}</p>`}</div>`;
+}
+
 async function refreshFinanceChat(id) {
+  if (dialogId !== id || !dlg.open) return;
+  const thread = body.querySelector('[data-chat-thread]');
+  const history = thread.querySelector('[data-chat-history]');
+  const count = history.querySelector('[data-chat-count]');
+  const archive = history.querySelector('[data-chat-archive]');
+  const log = thread.querySelector('[data-chat-log]');
+  let latestContent, archiveContent;
   while (dialogId === id && dlg.open) {
     const { messages, waiting } = await api('/api/finance-chat');
     if (dialogId !== id || !dlg.open) return;
-    const log = body.querySelector('[data-chat-log]');
+    const latest = messages.at(-1);
+    const older = messages.slice(0, -1).reverse();
+    const nextLatest = latest ? chatExchange(latest, waiting) : '';
+    const nextArchive = older.map(message => chatExchange(message, waiting)).join('');
+    if (latestContent !== nextLatest) {
+      log.innerHTML = latestContent = nextLatest;
+    }
+    if (archiveContent !== nextArchive) {
+      archive.innerHTML = archiveContent = nextArchive;
+      count.textContent = older.length;
+    }
+    history.hidden = !older.length;
+    thread.hidden = !latest;
     const pending = messages.some(m => ['pending', 'running', 'retry'].includes(m.state));
-    const content = messages.map(m => {
-      const references = m.references?.length
-        ? `<p class="note">Pesquisas citadas</p><ul class="chat-references">${m.references.map(ref =>
-            `<li>${link('economia?evento=' + encodeURIComponent(ref.id), esc(ref.title) + ' · ' + date(ref.date))}</li>`
-          ).join('')}</ul>`
-        : '';
-      const status = m.state === 'running' ? 'Preparando a resposta…'
-        : m.state === 'failed' ? m.notice || 'Envie a pergunta novamente.'
-          : waiting || m.notice || 'Pergunta na fila…';
-      return `<div class="inset"><p><strong>Você · ${esc(m.month.split('-').reverse().join('/'))}</strong></p>
-        <p class="chat-text">${esc(m.question)}</p>
-        ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>${references}
-          ${chatDocumentReferences(m.document_references)}
-          ${m.document_notice ? '<p class="note">' + esc(m.document_notice) + '</p>' : ''}`
-          : `<p class="note">${esc(status)}</p>`}</div>`;
-    }).join('');
-    if (log.innerHTML !== content) log.innerHTML = content;
     body.querySelector('form button[type=submit]').disabled = pending;
     if (!pending) return;
     await new Promise(resolve => setTimeout(resolve, 4000));
@@ -783,7 +810,12 @@ async function submit(form) {
   try {
     if (key === 'finance-chat') {
       await api('/api/finance-chat', { question: data.question, month: state.month, document: data.document || 'none' });
+      if (dialogId !== currentDialog || !dlg.open) return;
       form.reset();
+      const thread = body.querySelector('[data-chat-thread]');
+      thread.querySelector('[data-chat-history]').open = false;
+      thread.scrollTop = 0;
+      body.scrollTop = 0;
       await refreshFinanceChat(currentDialog);
       return;
     }

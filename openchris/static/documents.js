@@ -1,4 +1,4 @@
-import { action, buttonSubmit, choice, esc, field, header, icon, link, note } from './ui.js?v=carbono-3';
+import { action, buttonSubmit, choice, esc, field, header, icon, note } from './ui.js?v=carbono-4';
 
 const readable = (doc) => ['ready', 'partial'].includes(doc.reading);
 const readingStatus = {
@@ -85,13 +85,12 @@ export function deleteDocumentForm(doc) {
 
 export function chatDocumentChoices({ items, available }) {
   const docs = items.filter(doc => readable(doc) && doc.chat_enabled);
-  const manage = link('documentos', 'Gerenciar documentos');
-  if (!available || !docs.length) return manage;
+  if (!available || !docs.length) return '';
   return choice('document', 'Documentos nesta pergunta', {
     auto: 'Buscar nos documentos permitidos',
     none: 'Não consultar documentos',
     ...Object.fromEntries(docs.map(doc => [doc.id, doc.name + (doc.year ? ' · ' + doc.year : '')])),
-  }, 'auto') + manage;
+  }, 'auto');
 }
 
 export function chatDocumentReferences(sources = []) {

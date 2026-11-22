@@ -409,9 +409,15 @@ dialog::backdrop { background: rgb(9 12 16 / 68%); }
 .dialog-status:empty { display: none; }
 .dialog-head h2 { font-size: 1.45rem; }
 .dialog-copy { color: var(--muted); margin-bottom: 14px; }
-.finance-chat:not(:empty) { margin-bottom: 16px; }
+.finance-chat { margin-top: 12px; }
+.chat-history { margin-bottom: 12px; }
+.chat-history > summary { min-height: 44px; padding: 8px 2px; }
+.chat-history > .stack { padding-bottom: 12px; }
 .chat-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 4px 10px; }
-.chat-document-control { margin-top: 12px; }
+.chat-composer { display: grid; gap: 8px; }
+.chat-document-control:empty { display: none; }
+.chat-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.chat-actions > .primary { flex: none; }
 .document-library { display: grid; gap: 16px; }
 .document-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; }
 .document-heading > :first-child { flex: 1 1 280px; min-width: 0; }
@@ -428,8 +434,12 @@ dialog::backdrop { background: rgb(9 12 16 / 68%); }
 .document-actions .text-btn { font-size: .9rem; }
 .document-actions .warm { color: var(--warm); }
 .document-actions .warm:hover { color: var(--text); }
-[data-form="finance-chat"] textarea { width: 100%; resize: vertical; font: inherit; color: var(--text); background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
-[data-form="finance-chat"] button { margin-top: 10px; }
+.chat-composer textarea { width: 100%; min-height: 52px; max-height: 9rem; resize: vertical; font: inherit; color: var(--text); background: var(--input); border: 1px solid var(--control); border-radius: 8px; padding: 8px; }
+@media (min-height: 500px) {
+  #dialog-body:has(> .chat-composer) { display: flex; flex-direction: column; }
+  .chat-composer { flex: none; }
+  .finance-chat { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+}
 body:has(dialog[open]) { overflow: hidden; }
 .toast {
   position: fixed;
