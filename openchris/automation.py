@@ -5,7 +5,7 @@ import json
 import os
 import re
 import subprocess
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from urllib.parse import urlsplit
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -23,6 +23,8 @@ from .economy import FEEDS
 
 bp = Blueprint("automation", __name__)
 LOCAL = ZoneInfo("America/Sao_Paulo")
+LEGACY_DAILY_LIMIT_NOTICE = "O limite diário de execuções foi atingido. A fila retoma à meia-noite de Brasília."
+BACKGROUND_LIMIT_NOTICE = "As rotinas automáticas atingiram o limite diário do OpenChris. Elas voltam à meia-noite de Brasília."
 AGENTS = {"expense": "Classificação de gastos", "classify": "Classificação de investimentos",
           "asset": "Pesquisa de ativos", "macro": "Economia", "risk": "Risco da carteira",
           "report": "Síntese dos especialistas", "chat": "Chat financeiro"}
@@ -461,8 +463,11 @@ def run_one():
         context = prepare(db, jobs)
         if not jobs:
             return True
+        quota = None
         if kind != "telegram":
             control = runtime(db, "codex")
+            if control.notice == LEGACY_DAILY_LIMIT_NOTICE:
+                control.notice, control.until = "", None
             if os.getenv("CODEX_ENABLED") != "1" or (control.until and control.until > now()):
                 return False
             settings = db.get(CodexSettings, 1)
@@ -471,15 +476,16 @@ def run_one():
                 for job in jobs:
                     job.state, job.ready_at, job.notice = "retry", now() + timedelta(hours=1), model_notice(kind)
                 return True
-            quota = runtime(db, "quota:" + day().isoformat())
-            if quota.count >= max(0, int(os.getenv("CODEX_DAILY_LIMIT", "12"))):
-                end = datetime.combine(day() + timedelta(days=1), time.min, LOCAL)
-                control.until = end.astimezone(timezone.utc).replace(tzinfo=None)
-                control.notice = "O limite diário de execuções foi atingido. A fila retoma à meia-noite de Brasília."
-                return False
-            quota.count += 1
+            if kind != "chat":
+                quota = runtime(db, "quota:" + day().isoformat())
+                if quota.count >= max(0, int(os.getenv("CODEX_DAILY_LIMIT", "12"))):
+                    quota.notice = BACKGROUND_LIMIT_NOTICE
+                    return False
+                quota.count += 1
+                quota.notice = ""
         for job in jobs:
             job.state, job.attempts, job.ready_at = "running", job.attempts + 1, now() + timedelta(minutes=15)
+            job.notice = ""
         ids = [job.id for job in jobs]
     try:
         out = send_telegram(context) if kind == "telegram" else codex_result(kind, context, **options)
@@ -496,7 +502,7 @@ def run_one():
                 control.checked_at, control.notice, control.until = now(), "", None
     except Exception as error:
         with db_session() as db:
-            if kind != "telegram" and isinstance(error, (PreflightPause, ModelUnavailable)):
+            if quota is not None and isinstance(error, (PreflightPause, ModelUnavailable)):
                 db.get(Runtime, quota.key).count -= 1
             for key in ids:
                 job = db.get(Job, key)
@@ -508,9 +514,10 @@ def run_one():
                               if kind == "telegram" else "A tarefa não terminou. Outra tentativa está agendada.")
                 if isinstance(error, ModelUnavailable):
                     job.notice, job.ready_at = model_notice(kind), now() + timedelta(hours=1)
-                if kind == "chat":
+                if kind == "chat" and not pause:
                     job.state = "failed"
-                    job.notice = str(error) if pause else "A IA não concluiu a resposta. Envie a pergunta novamente."
+                    if not isinstance(error, ModelUnavailable):
+                        job.notice = "A IA não concluiu a resposta. Envie a pergunta novamente."
                 if pause and kind != "telegram":
                     control = runtime(db, "codex")
                     control.notice, control.until = job.notice, job.ready_at
@@ -529,6 +536,12 @@ def tick():
     for _ in range(8):
         if not run_one():
             break
+
+
+def active_codex_notice(control):
+    if control and control.until and control.until > now() and control.notice != LEGACY_DAILY_LIMIT_NOTICE:
+        return control.notice
+    return ""
 
 
 @bp.route("/api/finance-chat", methods=["GET", "POST"])
@@ -560,7 +573,7 @@ def finance_chat():
         return jsonify(messages=[{"question": job.payload["question"], "month": job.payload["month"],
                                   "answer": job.payload.get("answer"), "state": job.state, "notice": job.notice}
                                  for job in reversed(jobs)],
-                       waiting=control.notice if control and control.until and control.until > now() else "")
+                       waiting=active_codex_notice(control))
 
 
 @bp.get("/api/economy")
@@ -584,6 +597,7 @@ def agents_api():
     with db_session() as db:
         settings = db.get(CodexSettings, 1)
         control = db.get(Runtime, "codex")
+        quota = db.get(Runtime, "quota:" + day().isoformat())
         worker = db.get(Runtime, "worker")
         queue = {state: 0 for state in ("pending", "running", "done", "retry", "uncertain")}
         queue.update(dict(db.execute(select(Job.state, func.count()).group_by(Job.state)).all()))
@@ -593,7 +607,7 @@ def agents_api():
                        roles=AGENTS, models=settings.models if settings else {},
                        preferences=settings.preferences if settings else {},
                        last_success=iso(control.checked_at) if control else None,
-                       notice=(control.notice if control else "") or latest or "")
+                       notice=active_codex_notice(control) or (quota.notice if quota else "") or latest or "")
 
 
 @bp.post("/api/agents/<kind>/settings")

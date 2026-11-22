@@ -509,10 +509,15 @@ async function refreshFinanceChat(id) {
     if (dialogId !== id || !dlg.open) return;
     const log = body.querySelector('[data-chat-log]');
     const pending = messages.some(m => ['pending', 'running', 'retry'].includes(m.state));
-    const content = messages.map(m => `<div class="inset"><p><strong>Você · ${esc(m.month.split('-').reverse().join('/'))}</strong></p>
-      <p class="chat-text">${esc(m.question)}</p>
-      ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>`
-        : `<p class="note">${esc(m.notice || waiting || (m.state === 'running' ? 'Preparando a resposta…' : 'Pergunta na fila…'))}</p>`}</div>`).join('');
+    const content = messages.map(m => {
+      const status = m.state === 'running' ? 'Preparando a resposta…'
+        : m.state === 'failed' ? m.notice || 'Envie a pergunta novamente.'
+          : waiting || m.notice || 'Pergunta na fila…';
+      return `<div class="inset"><p><strong>Você · ${esc(m.month.split('-').reverse().join('/'))}</strong></p>
+        <p class="chat-text">${esc(m.question)}</p>
+        ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>`
+          : `<p class="note">${esc(status)}</p>`}</div>`;
+    }).join('');
     if (log.innerHTML !== content) log.innerHTML = content;
     body.querySelector('form button[type=submit]').disabled = pending;
     if (!pending) return;

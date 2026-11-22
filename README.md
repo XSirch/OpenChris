@@ -22,7 +22,7 @@ Use um `external_id` estável em cada linha, especialmente se houver duas compra
 
 ## Agentes e alertas
 
-No console do contêiner **worker**, execute `codex login --device-auth` e conclua a autorização no site oficial da OpenAI. Confira com `codex login status`. A autenticação fica no volume privado do worker. O fluxo usa a conta ChatGPT do titular e a fila aguarda nova disponibilidade quando a sessão ou a franquia exigirem. `CODEX_DAILY_LIMIT` limita as execuções locais por dia, além dos limites da assinatura. `ASSET_SOURCE_HOSTS` aceita domínios exatos de emissores ou gestores a incluir na pesquisa. [Autenticação do Codex](https://developers.openai.com/codex/auth)
+No console do contêiner **worker**, execute `codex login --device-auth` e conclua a autorização no site oficial da OpenAI. Confira com `codex login status`. A autenticação fica no volume privado do worker. O chat financeiro e as rotinas automáticas usam a franquia do Codex da conta ChatGPT do titular. A fila aguarda quando a sessão ou a franquia exigem uma pausa. `CODEX_DAILY_LIMIT` limita apenas as execuções automáticas por dia, com reinício à meia-noite de Brasília. `ASSET_SOURCE_HOSTS` aceita domínios exatos de emissores ou gestores a incluir na pesquisa. [Autenticação do Codex](https://developers.openai.com/codex/auth)
 
 Em **Mais → Agentes e pesquisas**, toque no agente para escolher seu modelo e esforço de raciocínio. A lista vem do Codex instalado no servidor e mostra os níveis aceitos por cada modelo. A escolha fica no banco e vale a partir da próxima tarefa. Se preferir que o Codex decida, selecione **Padrão do Codex**.
 

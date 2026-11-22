@@ -16,7 +16,7 @@ from sqlalchemy import JSON, DateTime, String, func, select, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base, db_session
-from .finance import Entry, Position, upsert_entry, upsert_position
+from .finance import INVESTMENT_INCOME, Entry, Position, upsert_entry, upsert_position
 
 bp = Blueprint("banking", __name__)
 BASE_URL = "https://api.pluggy.ai"
@@ -232,8 +232,9 @@ def _entry(raw, account, bills):
     provider_category = str(raw.get("category") or "")
     cat_key = provider_category.strip().casefold()
     description = raw.get("description") or "Lançamento"
+    description_key = " ".join(description.casefold().split())
     bank_bill = (not card and outflow and cat_key in ("transfer", "transfers")
-                 and " ".join(description.casefold().split()) in ("pagamento de fatura", "pagamento fatura"))
+                 and description_key in ("pagamento de fatura", "pagamento fatura"))
     payment = raw.get("paymentData") or {}
     payer = _party_document(payment.get("payer"))
     receiver = _party_document(payment.get("receiver"))
@@ -242,10 +243,14 @@ def _entry(raw, account, bills):
     if payer and receiver:
         rails = ("PIX", "TED", "DOC")
         own_transfer = payer == receiver and (own_transfer or op in rails or payment.get("paymentMethod") in rails)
+    category = ""
     if bank_bill or op == "PAGAMENTO_FATURA" or cat_key in ("credit card payment", "pagamento de fatura", "pagamento de cartão de crédito"):
         kind = "bill_payment"
     elif op in ("ESTORNO", "CASHBACK"):
         kind = "refund"
+    elif not card and amount > 0 and not own_transfer and op != "RESGATE_APLIC_FINANCEIRA" and re.fullmatch(
+            r"entrada cor rendimento [a-z]{4}[0-9]{2}", description_key):
+        kind, category = "income", INVESTMENT_INCOME
     elif (not card and own_transfer) or cat_key in ("investment", "investments") or op == "RESGATE_APLIC_FINANCEIRA":
         kind = "transfer"
     elif card and amount < 0:
@@ -254,12 +259,13 @@ def _entry(raw, account, bills):
         kind = "income"
     else:
         kind = "expense" if outflow else "unknown"
+        category = provider_category if outflow else ""
     detail = raw.get("creditCardMetadata") or {}
     bill_id = detail.get("billId")
     booked = bills[bill_id]["due"] if bill_id in bills else str(raw["date"])[:10]
     return {"external_id": "pluggy:" + str(raw["id"]), "description": description,
             "merchant": (raw.get("merchant") or {}).get("name") or "", "amount": abs(amount),
-            "booked_on": booked, "kind": kind, "category": provider_category if kind == "expense" else "",
+            "booked_on": booked, "kind": kind, "category": category,
             "card": card, "account_id": account["id"], "bill_id": bill_id or "",
             "bank_direction": "outflow" if outflow else "inflow",
             "scheduled": raw.get("status") == "PENDING" and not card,

@@ -151,3 +151,26 @@ def test_bank_replay_removes_internal_movements_from_expenses_and_income(client)
     login(client)
     spending = client.get("/api/finance?month=2025-11").json["spending"]
     assert spending["total"] == "100.00"
+
+
+def test_bank_replay_recognizes_broker_yield_and_preserves_manual_classification(client):
+    account = {"id": "broker", "type": "BANK", "currency": "BRL"}
+    raw = {"id": "yield", "amount": 7.63, "description": "Entrada  COR RENDIMENTO RECR11",
+           "category": "Investments", "date": "2025-11-08"}
+    with db_session() as db:
+        row = banking._entry(raw, account, {})
+        assert (row["kind"], row["category"], row["bank_direction"]) == (
+            "income", "Rendimentos de investimentos", "inflow")
+        saved = banking._import_row(db, "entries", {**row, "kind": "transfer", "category": ""}, "pluggy")
+        saved.classification_source = "codex"
+        latest = banking._import_row(db, "entries", row, "pluggy")
+        assert (latest.id, latest.kind, latest.category) == (saved.id, "income", row["category"])
+        latest.kind, latest.category, latest.classification_source = "transfer", "Revisada", "manual"
+        latest = banking._import_row(db, "entries", row, "pluggy")
+        assert (latest.kind, latest.category) == ("transfer", "Revisada")
+
+    for change in ({"amount": -5}, {"description": "Entrada COR RENDIMENTO"}, {"description": "Resgate de investimento"}):
+        assert banking._entry({**raw, **change}, account, {})["kind"] == "transfer"
+    card_credit = banking._entry({**raw, "amount": -2.17, "category": "", "description": "Desc Antecipa Parcelas"},
+                                 {**account, "type": "CREDIT"}, {})
+    assert (card_credit["kind"], card_credit["bank_direction"]) == ("unknown", "inflow")

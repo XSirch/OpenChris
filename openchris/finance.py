@@ -22,6 +22,7 @@ MAX_MONEY = Decimal("999999999999.99")
 MONEY = Numeric(16, 2)
 UNKNOWN_CLASS = "A classificar"
 UNCATEGORIZED = "Sem categoria"
+INVESTMENT_INCOME = "Rendimentos de investimentos"
 KINDS = {"expense", "income", "transfer", "refund", "bill_payment", "unknown"}
 CLASSES = ("Renda fixa", "Ações", "Fundos imobiliários", "Exterior")
 
@@ -284,7 +285,8 @@ def upsert_entry(session, data, source="manual"):
     if fresh or "kind" in data or "category" in data:
         kind, category = _classification(data.get("kind", entry.kind or "unknown"),
                                          data.get("category", entry.category))
-        confirmed_bank_movement = (source == "pluggy" and kind in ("transfer", "bill_payment")
+        confirmed_bank_movement = (source == "pluggy"
+                                   and (kind in ("transfer", "bill_payment") or (kind, category) == ("income", INVESTMENT_INCOME))
                                    and entry.classification_source != "manual")
         if fresh or confirmed_bank_movement:
             entry.original_kind, entry.original_category = kind, category

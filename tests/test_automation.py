@@ -57,6 +57,60 @@ def test_finance_chat_uses_worker_and_financial_context(site, monkeypatch):
     assert (message["state"], message["answer"]) == ("done", "O gasto foi de R$ 92,31.")
 
 
+def test_finance_chat_runs_after_background_quota_is_exhausted(site, monkeypatch):
+    monkeypatch.setenv("CODEX_DAILY_LIMIT", "1")
+    quota_key = "quota:" + jobs.day().isoformat()
+    with db_session() as db:
+        worker = jobs.runtime(db, "worker")
+        worker.count, worker.checked_at = 1, jobs.now()
+        jobs.runtime(db, quota_key).count = 1
+        control = jobs.runtime(db, "codex")
+        control.notice = "O limite diário de execuções foi atingido. A fila retoma à meia-noite de Brasília."
+        control.until = jobs.now() + timedelta(hours=1)
+        entry(db, "Compra de teste", 1)
+        jobs.plan(db)
+
+    assert site.post("/api/finance-chat", json={"question": "Quanto gastei?", "month": jobs.day().strftime("%Y-%m")}).status_code == 202
+    assert site.get("/api/finance-chat").json["waiting"] == ""
+
+    def answer(kind, context, **kwargs):
+        assert kind == "chat"
+        return {"answer": "Resposta de teste."}
+
+    monkeypatch.setattr(jobs, "codex_result", answer)
+    assert jobs.run_one()
+    assert not jobs.run_one()
+    assert site.get("/api/finance-chat").json["messages"][0]["answer"] == "Resposta de teste."
+    assert "rotinas automáticas" in site.get("/api/agents").json["notice"]
+    with db_session() as db:
+        assert db.get(jobs.Runtime, quota_key).count == 1
+
+
+def test_finance_chat_respects_and_recovers_from_codex_pause(site, monkeypatch):
+    with db_session() as db:
+        worker = jobs.runtime(db, "worker")
+        worker.count, worker.checked_at = 1, jobs.now()
+    assert site.post("/api/finance-chat", json={"question": "Quanto gastei?", "month": jobs.day().strftime("%Y-%m")}).status_code == 202
+
+    def rate_limit(*args, **kwargs):
+        raise runner.AgentPause("A franquia do Codex atingiu o limite.", 180)
+
+    monkeypatch.setattr(jobs, "codex_result", rate_limit)
+    assert not jobs.run_one()
+    status = site.get("/api/finance-chat").json
+    assert status["messages"][0]["state"] == "retry" and "franquia do Codex" in status["waiting"]
+
+    with db_session() as db:
+        job = db.scalar(select(jobs.Job))
+        job.ready_at = jobs.now() - timedelta(seconds=1)
+    monkeypatch.setattr(jobs, "codex_result", lambda *args, **kwargs: {"answer": "Resposta de teste."})
+    assert not jobs.run_one()
+    with db_session() as db:
+        db.get(jobs.Runtime, "codex").until = jobs.now() - timedelta(seconds=1)
+    assert jobs.run_one()
+    assert site.get("/api/finance-chat").json["messages"][0]["state"] == "done"
+
+
 def test_first_catalog_seeds_supported_agents_once(site, monkeypatch):
     models = {"gpt-6-luna": {"efforts": ["low", "medium"]}, "gpt-6.1-sol": {"efforts": ["medium"]},
               "gpt-6-astra": {"efforts": ["medium"]}}

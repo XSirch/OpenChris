@@ -279,14 +279,18 @@ export function editableEntry(e, advances = []) {
 }
 function entry(e, advances) {
   const credit = e.kind === 'income' || e.kind === 'refund';
-  const tone = credit ? 'positive' : e.kind === 'expense' ? 'expense-value' : '';
-  const sign = credit ? '+' : e.kind === 'expense' ? '−' : '';
+  const debit = e.kind === 'expense';
+  const tone = credit ? 'positive' : debit ? 'expense-value' : '';
+  const inflow = e.bank_direction === 'inflow';
+  const outflow = e.bank_direction === 'outflow';
+  const sign = credit ? '+' : debit ? '−' : inflow ? '+' : outflow ? '−' : '';
+  const direction = credit || debit ? '' : inflow ? 'Entrada no extrato' : outflow ? 'Saída no extrato' : '';
   return /* HTML */ `<article class="entry">
     <div class="split">
       <h3>${esc(e.description)}</h3>
       <strong class="numeric ${tone}">${sign}${money(e.amount)}</strong>
     </div>
-    ${note([date(e.date, { day: 'numeric', month: 'short' }), esc(kinds[e.kind]), e.category !== kinds[e.kind] ? esc(e.category) : '', e.installment_group ? 'Parcela ' + esc(e.installment_index || '') : '', e.advanced_by ? 'Antecipada' : ''].filter(Boolean).join(' · '))}
+    ${note([date(e.date, { day: 'numeric', month: 'short' }), esc(kinds[e.kind]), direction, e.category !== kinds[e.kind] ? esc(e.category) : '', e.installment_group ? 'Parcela ' + esc(e.installment_index || '') : '', e.advanced_by ? 'Antecipada' : ''].filter(Boolean).join(' · '))}
     <div class="actions">
       ${editableEntry(e, advances) ? action('edit-entry', 'Editar lançamento', 'text-btn', `data-id="${esc(e.id)}"`) : ''}
       ${action('correct', 'Corrigir classificação', 'text-btn', `data-id="${esc(e.id)}"`)}
