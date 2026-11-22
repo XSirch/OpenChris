@@ -1,4 +1,4 @@
-import { date, esc, has, money, note } from './ui.js';
+import { date, esc, has, money, note } from './ui.js?v=carbono';
 
 const references = {
   cdi: ['CDI', '#87cfc1', [9, 5]],
@@ -7,7 +7,7 @@ const references = {
 };
 
 export const performancePanel = () => `
-  <section class="performance" aria-labelledby="performance-title">
+  <section class="panel performance" aria-labelledby="performance-title">
     <div class="performance-head">
       <h2 id="performance-title">Desempenho</h2>
       <div class="portfolio-modes" role="group" aria-label="Visão de desempenho">
@@ -22,6 +22,34 @@ const shortDay = (value) => date(value, { day: '2-digit', month: 'short' });
 const percent = (value) => Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%';
 const range = (start, end) => `${shortDay(start)} a ${shortDay(end)}`;
 const lastPoint = (series) => series.at(-1);
+
+export function balanceTrend(performance) {
+  const observed = (performance?.observations || []).filter(point => has(point.value) && Number.isFinite(Number(point.value)));
+  const monthly = [...new Map(observed.map(point => [point.date.slice(0, 7), point])).values()];
+  const points = (monthly.length > 1 ? monthly : observed).slice(-6);
+  if (points.length < 2) return '';
+  const values = points.map(point => Number(point.value));
+  const min = Math.min(...values), max = Math.max(...values);
+  const coords = values.map((value, index) => [
+    3 + index * 114 / (values.length - 1),
+    max === min ? 22 : 38 - (value - min) * 32 / (max - min),
+  ]);
+  const [lastX, lastY] = coords.at(-1);
+  const from = shortDay(points[0].date), through = shortDay(points.at(-1).date);
+  const label = performance.partial ? 'Saldo observado nas conexões' : 'Saldo observado';
+  const description = `${label} de ${from} a ${through}, de ${money(values[0])} a ${money(values.at(-1))}.`;
+  return `<div class="balance-trend">
+    <svg viewBox="0 0 120 44" preserveAspectRatio="none" role="img" aria-label="${esc(description)}">
+      <defs><linearGradient id="balance-shade" x2="0" y2="1"><stop stop-color="#33494e" stop-opacity=".23"/><stop offset="1" stop-color="#33494e" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="${coords.map(pair => pair.join(',')).join(' ')} ${lastX},44 3,44" fill="url(#balance-shade)"/>
+      <polyline points="${coords.map(pair => pair.join(',')).join(' ')}" fill="none" stroke="#30464b"
+        stroke-width="2" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="${lastX}" cy="${lastY}" r="2.8" fill="#263e43"/>
+    </svg>
+    <span class="trend-caption" aria-hidden="true"><span>${from}</span><span>${through}</span></span>
+    <span aria-hidden="true">${label}</span>
+  </div>`;
+}
 
 function dataChart(target, traces, format) {
   if (!traces.some(({ points }) => points.length > 1)) return;

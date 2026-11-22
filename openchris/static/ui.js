@@ -2,10 +2,15 @@ const icons = {
   hoje: '<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
   carteira:
     '<path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1V9a2 2 0 0 0-2-2H5a2 2 0 0 1 0-4"/><path d="M21 12h-5v4h5"/>',
-  gastos: '<path d="M4 20v-5m7 5V9m7 11V3" stroke-width="3"/>',
+  gastos: '<path d="m5 3 2.3 1.6L9.7 3 12 4.6 14.3 3l2.4 1.6L19 3v18l-2.3-1.6-2.4 1.6L12 19.4 9.7 21l-2.4-1.6L5 21z"/><path d="M8.7 9.3h6.6m-6.6 4.4h5"/>',
   aportes:
     '<ellipse cx="15" cy="6" rx="6" ry="3"/><path d="M9 6v4c0 1.7 2.7 3 6 3s6-1.3 6-3V6M21 10v4c0 1.7-2.7 3-6 3"/><ellipse cx="8" cy="14" rx="6" ry="3"/><path d="M2 14v4c0 1.7 2.7 3 6 3s6-1.3 6-3v-4"/>',
-  mais: '<circle cx="4" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="20" cy="12" r="1.6" fill="currentColor"/>',
+  mais: '<rect x="4" y="4" width="6" height="6" rx="1.25"/><rect x="14" y="4" width="6" height="6" rx="1.25"/><rect x="4" y="14" width="6" height="6" rx="1.25"/><rect x="14" y="14" width="6" height="6" rx="1.25"/>',
+  chat: '<path d="M19 13a7 7 0 0 1-7 5.5H9l-4 2v-4A7 7 0 0 1 10 4.5h3m5-2v6m-3-3h6"/>',
+  basket: '<path d="M3 10h18l-2.2 9a1 1 0 0 1-1 .8H6.2a1 1 0 0 1-1-.8L3 10zm4 0 3-6m7 6-3-6M9 13.5l.6 3m5.4-3-.6 3"/>',
+  alert: '<path d="m10.3 4.3-8 14a1.6 1.6 0 0 0 1.4 2.4h16.6a1.6 1.6 0 0 0 1.4-2.4l-8-14a2 2 0 0 0-3.4 0zM12 9v4.2m0 3v.2"/>',
+  info: '<circle cx="12" cy="12" r="8.8"/><path d="M12 11v5m0-9v.2"/>',
+  check: '<path d="m4.5 12 5.1 5.1 10-10.4"/>',
   chart:
     '<path d="m4 17 6-6 4 3 7-9"/><circle cx="4" cy="17" r="1.6"/><circle cx="10" cy="11" r="1.6"/><circle cx="14" cy="14" r="1.6"/><circle cx="21" cy="5" r="1.6"/>',
   right: '<path d="m8 5 7 7-7 7"/>',

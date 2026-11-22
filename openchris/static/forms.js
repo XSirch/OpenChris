@@ -12,8 +12,8 @@ import {
   buttonSubmit,
   form,
   note,
-} from './ui.js';
-import { kinds, matchingCharges } from './finance-views.js';
+} from './ui.js?v=carbono';
+import { kinds, matchingCharges } from './finance-views.js?v=carbono';
 
 const baseClasses = ['Renda fixa', 'Ações', 'Fundos imobiliários', 'ETFs', 'Exterior'];
 const options = (labels) => Object.fromEntries(labels.map((x) => [x, x]));
@@ -152,9 +152,6 @@ export function targetsForm(p) {
     form('targets', inputs + '<p class="target-total" data-target-total role="status"></p>', 'Salvar metas') +
     (p.targets_manual ? form('reset-targets', note('Você também pode voltar à distribuição calculada para seu perfil.'), 'Usar metas do perfil') : '')
   );
-}
-export function simulateForm(c) {
-  return form('simulate', amountField('amount', 'Simular distribuição de', c.simulated), 'Ver distribuição');
 }
 export function advanceForm(fin, group) {
   const s = fin.spending,

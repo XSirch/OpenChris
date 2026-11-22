@@ -9,17 +9,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "dist" / "openchris" / "compose.yaml"
+BINARY_ASSETS = {".png", ".woff2"}
 
 
 def source_archive():
     archive = io.BytesIO()
-    patterns = ("*.py", "templates/*.html", "static/*.css", "static/*.js", "static/*.svg")
+    patterns = ("*.py", "templates/*.html", "static/*.css", "static/*.js", "static/*.svg",
+                "static/*.txt", "static/*.png", "static/*.woff2")
     files = sorted(path for pattern in patterns for path in (ROOT / "openchris").glob(pattern))
     with tarfile.open(fileobj=archive, mode="w") as tar:
         for path in files:
             if path.is_symlink() or not path.is_file():
                 raise ValueError(f"Arquivo de origem inválido: {path}")
-            data = path.read_text(encoding="utf-8").encode("utf-8")
+            data = path.read_bytes() if path.suffix in BINARY_ASSETS else path.read_text(encoding="utf-8").encode("utf-8")
             entry = tarfile.TarInfo(path.relative_to(ROOT).as_posix())
             entry.size = len(data)
             tar.addfile(entry, io.BytesIO(data))

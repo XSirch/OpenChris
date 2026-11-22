@@ -14,8 +14,9 @@ import {
   link,
   empty,
   note,
-} from './ui.js';
-import { performancePanel } from './performance.js';
+  amountField,
+} from './ui.js?v=carbono';
+import { performancePanel, balanceTrend } from './performance.js?v=carbono';
 
 export const kinds = {
   unknown: 'A classificar',
@@ -36,83 +37,128 @@ const origin = (key) => origins[key] || esc(key) || 'Sem origem';
 const op = (id, text, kind = 'text-btn') => action(id, text, kind);
 const sectionTitle = (text) => `<h2 class="section-title">${text}</h2>`;
 const noAmount = 'A informar';
+const classColors = {
+  'Renda fixa': '#a9bfdf',
+  'Ações': '#8eafa4',
+  'Fundos imobiliários': '#bca9c8',
+  'Exterior': '#ceb590',
+  'ETFs': '#abc29f',
+};
+const classColor = name => Object.hasOwn(classColors, name) ? classColors[name] : '#9faeba';
 const changeLabel = (value) =>
   Number(value) > 0 ? 'acima da média' : Number(value) < 0 ? 'abaixo da média' : 'na média';
 function priority(fin) {
   const { portfolio, spending, contribution } = fin;
   if (Number(contribution.shortfall) > 0 && contribution.confirmed)
     return [
-      'Seu saldo precisa de ' + money(contribution.shortfall),
+      'Faltam ' + money(contribution.shortfall),
       'Os compromissos e o saldo mínimo superam o dinheiro disponível.',
-      'Conferir o cálculo',
       'aportes',
+      'alert',
     ];
   const top = [...spending.categories]
     .filter((c) => has(c.change) && Number(c.change) > 0)
     .sort((a, b) => Number(b.change) - Number(a.change))[0];
   if (top)
     return [
-      esc(top.category) + ' subiu ' + money(top.change),
-      'Em relação à média dos períodos anteriores até o mesmo dia.',
-      'Entender a diferença',
+      esc(top.category),
+      money(top.change) + ' acima da média até o dia ' + Number(spending.cutoff.slice(-2)) + '.',
       'gastos?categoria=' + encodeURIComponent(top.category),
+      top.category.toLocaleLowerCase('pt-BR').startsWith('aliment') ? 'basket' : 'gastos',
     ];
   if (Number(spending.pending) > 0)
     return [
       'Revise ' + spending.pending + (Number(spending.pending) === 1 ? ' lançamento' : ' lançamentos'),
       'A categoria ainda precisa de confirmação.',
-      'Revisar gastos',
+      'gastos',
       'gastos',
     ];
   if (!portfolio.positions.length)
     return [
       'Monte sua carteira',
       'Importe um extrato ou registre seu primeiro investimento.',
-      'Adicionar investimentos',
+      'carteira',
       'carteira',
     ];
   if (!contribution.confirmed)
     return [
       'Quanto você pode aportar?',
       'Informe o saldo, as contas e o mínimo que deseja manter.',
-      'Calcular meu aporte',
       'aportes',
+      'info',
     ];
   return [
     'Aporte disponível de ' + money(contribution.available),
     'Confira como esse valor se distribui entre as classes da carteira.',
-    'Ver meu aporte',
+    'aportes',
     'aportes',
   ];
 }
-export function today(fin, economy) {
-  const [title, desc, cta, route] = priority(fin);
+function homePanelTitle(title, href, label) {
+  return `<div class="panel-heading"><h2>${title}</h2>${link(href, label + icon('arrow', 15))}</div>`;
+}
+function recentEntry(e) {
+  const { sign, tone } = entryDirection(e);
+  const detail = date(e.date, { day: 'numeric', month: 'long' }) + ' · ' + esc(e.category || kinds[e.kind] || kinds.unknown);
+  return link('gastos?lancamento=' + encodeURIComponent(e.id), `
+    <span class="ledger-icon">${icon('gastos', 18)}</span>
+    <span class="row-copy"><strong>${esc(e.description)}</strong><small>${detail}</small></span>
+    <strong class="numeric ${tone === 'positive' ? tone : ''}">${sign}${money(e.amount)}</strong>`, 'ledger-row');
+}
+function classSummary(classes) {
+  const visible = classes.filter((item) => Number(item.value) > 0);
+  if (!visible.length) return empty('As posições em reais aparecerão aqui por classe.');
+  return `<div class="mix-bar" aria-hidden="true">${visible.map(item =>
+    `<span style="flex:${Number(item.value)};background:${classColor(item.asset_class)}"></span>`).join('')}</div>
+    <div class="mix-legend">${visible.map(item =>
+      `<div><i class="mix-dot" aria-hidden="true" style="background:${classColor(item.asset_class)}"></i>
+        <span class="muted">${esc(item.asset_class)}</span><span class="numeric">${percent(item.percent)}</span></div>`).join('')}</div>`;
+}
+export function today(fin, economy, performance) {
+  const [title, desc, route, symbol] = priority(fin);
   const { portfolio: p, spending: s, contribution: c } = fin;
   const upcoming = economy?.events
     ?.filter((e) => e.date >= isoToday())
     .sort((a, b) => a.date.localeCompare(b.date))[0];
+  const moneyMetrics = (href, label, value) =>
+    link(href, `<span>${label}</span><strong class="numeric">${value}</strong>`, '');
+  const actions = (key, label) => `<span class="quick-icon">${icon(key, 22)}</span>${label}`;
+  const ledger = 'gastos?lista=1';
+  const label = Object.keys(p.foreign_totals || {}).length ? 'Patrimônio investido em reais' : 'Patrimônio investido';
+  const balance = money(p.total).replace(/^R\$\s*/, '<span class="currency">R$</span> ');
   const agenda = upcoming
-    ? rowLink('economia?evento=' + encodeURIComponent(upcoming.id), esc(upcoming.title))
-    : empty(economy ? 'A agenda ainda não tem eventos futuros.' : 'A agenda está indisponível.') +
-      link('economia', 'Consultar economia');
+    ? rowLink('economia?evento=' + encodeURIComponent(upcoming.id),
+        `<span class="row-copy"><strong>${esc(upcoming.title)}</strong><small>${date(upcoming.date, { day: 'numeric', month: 'long' })}</small></span>`)
+    : empty(economy ? 'A agenda ainda não tem eventos futuros.' : 'A agenda está indisponível.');
   return (
-    header('Hoje', date(fin.as_of || isoToday(), { day: 'numeric', month: 'long' })) +
-    /* HTML */ `<div class="columns">
-      <div class="stack">
-        <section class="hero-note">
-          ${icon('chart', 31)}
-          <h2>${title}</h2>
-          <p>${desc}</p>
-          ${link(route, cta + ' ' + icon('arrow', 18))}
-        </section>
-        <section class="metric-group">
-          ${metric(Object.keys(p.foreign_totals || {}).length ? 'Patrimônio investido em reais' : 'Patrimônio investido', money(p.total))}
-          <div class="metrics">
-            ${rowLink('gastos', 'Gastos do mês', money(s.total), Number(s.change) > 0 ? 'warm' : '')}${rowLink('aportes', 'Aporte disponível', c.confirmed ? money(c.available) : noAmount)}
-          </div>
-        </section>
+    /* HTML */ `<header class="page-head home-heading"><h1>Hoje</h1>
+      <p>${date(fin.as_of || isoToday(), { day: 'numeric', month: 'long' })}</p></header>
+    <div class="today-grid">
+      <section class="wealth" aria-label="Resumo financeiro">
+        ${link('carteira', `<div class="wealth-heading">${icon('carteira', 17)}${label}${icon('right', 16)}</div>
+          <div class="wealth-total"><p class="value">${balance}</p>${balanceTrend(performance)}</div>`, 'wealth-link')}
+        ${p.missing_connections ? link('mais?abrir=conexoes',
+          p.missing_connections === 1 ? '1 conexão sem dados' : `${p.missing_connections} conexões sem dados`,
+          'wealth-coverage') : ''}
+        <div class="wealth-metrics">
+          ${moneyMetrics('gastos', 'Gastos do mês', money(s.total))}
+          ${moneyMetrics('aportes', 'Aporte disponível', c.confirmed ? money(c.available) : noAmount)}
+        </div>
+      </section>
+      <div class="quick-actions" role="group" aria-label="Ações rápidas">
+        ${link(ledger, actions('gastos', 'Ver lançamentos'), 'quick')}
+        ${link('aportes?abrir=simulacao', actions('chart', 'Simular aporte'), 'quick')}
+        ${action('finance-chat', actions('chat', 'Perguntar à IA'), 'quick')}
       </div>
-      <section>${sectionTitle('Na agenda')}${agenda}</section>
+      ${link(route, `<span class="attention-tile ${symbol === 'basket' ? 'food' : ''}">${icon(symbol, 19)}</span>
+        <span class="row-copy"><strong>${title}</strong><small>${desc}</small></span>${icon('right', 17)}`,
+        'attention' + (symbol === 'alert' ? ' warn' : ''))}
+      <section class="panel today-ledger">
+        ${homePanelTitle('Últimos lançamentos', ledger, 'Ver todos')}
+        ${s.entries.length ? s.entries.slice(0, 4).map(recentEntry).join('') : empty('Os lançamentos do mês aparecerão aqui.')}
+      </section>
+      <section class="panel today-agenda">${homePanelTitle('Na agenda', 'economia', 'Ver agenda')}${agenda}</section>
+      <section class="panel today-mix">${homePanelTitle('Carteira por classe', 'carteira', 'Ver carteira')}${classSummary(p.classes)}</section>
     </div>`
   );
 }
@@ -212,7 +258,7 @@ export function portfolio(fin) {
   const missing = p.missing_connections;
   return header('Carteira') + /* HTML */ `
     <div class="portfolio-page">
-      <section class="portfolio-balance" aria-label="Patrimônio investido">
+      <section class="panel portfolio-balance" aria-label="Patrimônio investido">
         <div>
           ${p.positions.length
             ? metric('Patrimônio investido em reais', money(p.total))
@@ -229,10 +275,9 @@ export function portfolio(fin) {
           ${missing ? '' : link('mais?abrir=conexoes', 'Ver conexões')}
         </div>
       </section>
-      ${performancePanel()}
       ${p.positions.length ? `
         <div class="portfolio-grid">
-          <section class="portfolio-analysis" aria-labelledby="distribution-heading">
+          <section class="panel portfolio-analysis" aria-labelledby="distribution-heading">
             <div class="portfolio-section-head">
               <h2 id="distribution-heading">Distribuição</h2>
               ${currencies.length ? `<label class="field portfolio-currency">Moeda
@@ -250,7 +295,7 @@ export function portfolio(fin) {
             <button id="portfolio-more" type="button" class="text-btn" aria-expanded="false" aria-controls="portfolio-chart" hidden>Ver todos os ativos</button>
             <div id="portfolio-context" class="portfolio-context"></div>
           </section>
-          <section class="portfolio-list" aria-labelledby="portfolio-heading">
+          <section class="panel portfolio-list" aria-labelledby="portfolio-heading">
             <h2 id="portfolio-heading" tabindex="-1">Posições</h2>
             <label class="field">Buscar posição
               <input id="portfolio-search" type="search" placeholder="Nome, código ou emissor">
@@ -262,6 +307,7 @@ export function portfolio(fin) {
             <div id="portfolio-results" class="details-list"></div>
           </section>
         </div>` : ''}
+      ${performancePanel()}
     </div>`;
 }
 
@@ -298,7 +344,7 @@ export function mountPortfolio(root, fin, view) {
     });
     const quantity = positions.length + (positions.length === 1 ? ' posição' : ' posições');
     count.textContent = group ? `${group.name} · ${quantity}` : quantity;
-    clear.hidden = !group;
+    clear.hidden = !group && !view.query.trim();
     list.innerHTML = positions.length ? positions.map(asset).join('') : empty(
       terms.length ? 'Nenhuma posição encontrada para essa busca.' : 'Nenhuma posição para este filtro.',
     );
@@ -377,6 +423,7 @@ export function mountPortfolio(root, fin, view) {
   });
   clear.addEventListener('click', () => {
     view.group = null;
+    view.query = search.value = '';
     renderChart();
     search.focus();
   });
@@ -404,7 +451,7 @@ export function editableEntry(e, advances = []) {
   return e.source === 'manual' && !e.advanced_by && !advances.some((advance) => advance.id === e.id);
 }
 
-function entry(e, advances) {
+function entryDirection(e) {
   const credit = e.kind === 'income' || e.kind === 'refund';
   const debit = e.kind === 'expense';
   const tone = credit ? 'positive' : debit ? 'expense-value' : '';
@@ -412,8 +459,12 @@ function entry(e, advances) {
   const outflow = e.bank_direction === 'outflow';
   const sign = credit ? '+' : debit ? '−' : inflow ? '+' : outflow ? '−' : '';
   const direction = credit || debit ? '' : inflow ? 'Entrada no extrato' : outflow ? 'Saída no extrato' : '';
+  return { sign, tone, direction };
+}
+function entry(e, advances) {
+  const { sign, tone, direction } = entryDirection(e);
   const kind = e.kind === 'refund' && e.category === 'Desconto de antecipação' ? 'Crédito na fatura' : kinds[e.kind];
-  return /* HTML */ `<article class="entry">
+  return /* HTML */ `<article class="entry" id="lancamento-${esc(e.id)}" tabindex="-1" data-entry-row>
     <div class="split">
       <h3>${esc(e.description)}</h3>
       <strong class="numeric ${tone}">${sign}${money(e.amount)}</strong>
@@ -486,7 +537,7 @@ export function spending(fin, state) {
     header('Gastos') +
     /* HTML */ `<div class="columns">
       <div class="stack">
-        <section>
+        <section class="panel">
           <div class="nav-month">
             ${action('prev-month', icon('left'), 'icon-btn', 'aria-label="Mês anterior"')}<input
               id="month"
@@ -497,12 +548,12 @@ export function spending(fin, state) {
           </div>
           ${metric(totalLabel, money(s.total))}
         </section>
-        <section class="stack tight">
+        <section class="panel stack tight">
           ${category ? chooser + '<div>' + comparison(category, cutoff) + '</div>' : sectionTitle('Gastos por categoria') + empty('Nenhuma despesa registrada neste período.')}${has(category?.change) ? /* HTML */ `<div class="inset split"><span>Efeito estimado no aporte</span><strong>${money(-Number(category.change))}</strong></div>` : ''}
         </section>
         ${
           s.history?.length
-            ? /* HTML */ `<details class="accordion">
+            ? /* HTML */ `<details class="panel accordion">
                 <summary><strong>Meses usados na comparação</strong>${icon('down', 16, 'rotate')}</summary>
                 ${s.history.map((h) => row('Até ' + date(h.through), money(h.total))).join('')}
               </details>`
@@ -510,16 +561,16 @@ export function spending(fin, state) {
         }
       </div>
       <div class="stack">
-        <section>
-          ${sectionTitle('Lançamentos')}
+        <section class="panel">
+          <h2 class="section-title" id="lancamentos" tabindex="-1">Lançamentos</h2>
           <div class="actions">
             ${op('entry', 'Novo lançamento', 'primary')}${op('import-entries', 'Importar extrato', 'secondary')}${op('finance-chat', 'Conversar com a IA', 'secondary')}
           </div>
           ${s.installments?.length ? op('advance', 'Antecipar parcelas') : ''}
-        </section>
-        ${reconciliation}
-        <section aria-label="Lista de lançamentos">
-          ${entries.length ? entries.map((e) => entry(e, s.advances)).join('') : empty('Os lançamentos deste mês aparecerão aqui.')}
+          <div class="entry-list">
+            ${reconciliation}
+            ${entries.length ? entries.map((e) => entry(e, s.advances)).join('') : empty('Os lançamentos deste mês aparecerão aqui.')}
+          </div>
         </section>
       </div>
     </div>`
@@ -527,14 +578,12 @@ export function spending(fin, state) {
 }
 export function contributions(fin, state) {
   const c = fin.contribution,
-    p = fin.profile,
-    allocations = c.allocation || [];
-  const assigned = allocations.filter((a) => Number(a.amount) > 0);
+    initial = has(c.simulated) ? String(c.simulated).replace('.', ',') : '';
   return (
     header('Aportes') +
     /* HTML */ `<div class="columns">
       <div class="stack">
-        <section>
+        <section class="panel">
           <p class="metric-label">Disponível para aportar</p>
           <div class="split">
             <p class="value accent ${c.confirmed ? '' : 'unknown'}">
@@ -545,7 +594,6 @@ export function contributions(fin, state) {
           ${c.warnings?.length
             ? c.warnings.map((warning) => note(esc(warning))).join('')
             : !c.confirmed ? note('Complete os valores abaixo para calcular o aporte.') : ''}
-        </section>
         <div class="rows">
           ${row('Saldo em conta', money(c.balance))}${row('Contas até a próxima entrada', has(c.commitments) ? '−' + money(c.commitments) : '—')}${row('Saldo mínimo', has(c.minimum) ? '−' + money(c.minimum) : '—')}${has(c.next_income_date) ? row('Próxima entrada', date(c.next_income_date)) : ''}${Number(c.shortfall) > 0 ? row('Valor que falta', '<strong class="warm">' + money(c.shortfall) + '</strong>') : ''}
         </div>
@@ -557,20 +605,36 @@ export function contributions(fin, state) {
               </details>`
             : ''
         }
-        <section>
-          ${sectionTitle('Valor da simulação')}
-          <div class="split">
-            <span class="numeric">${has(c.simulated) ? money(c.simulated) : 'A definir'}</span
-            >${op('simulate', 'Alterar valor')}
-          </div>
-          ${has(state.amount) ? op('clear-simulation', 'Usar aporte disponível') : ''}
+        </section>
+        <section class="panel">
+          ${sectionTitle('Simular aporte')}
+          <form class="simulation" data-form="simulate" novalidate>
+            ${amountField('amount', 'Valor da simulação', initial, true, {
+              type: 'text',
+              attr: 'id="valor-aporte" inputmode="decimal" autocomplete="off" aria-describedby="simulation-error"',
+            })}
+            <p class="error" id="simulation-error" role="alert"></p>
+            <div class="actions">
+              <button type="submit" class="primary">Recalcular</button>
+              ${action('clear-simulation', 'Usar aporte disponível', 'text-btn', has(state.amount) ? '' : 'hidden')}
+            </div>
+          </form>
         </section>
       </div>
-      <div class="stack">
-        <section>
+      <div class="stack" id="contribution-result">${contributionResults(fin)}</div>
+    </div>`
+  );
+}
+
+export function contributionResults(fin) {
+  const c = fin.contribution, p = fin.profile;
+  const allocations = c.allocation || [];
+  const assigned = allocations.filter((a) => Number(a.amount) > 0);
+  return /* HTML */ `
+        <section class="panel">
           ${sectionTitle('Distribuição sugerida')}${
             assigned.length
-              ? assigned
+              ? note(money(c.simulated) + ' distribuídos entre as classes abaixo da meta.') + assigned
                   .map(
                     (a) =>
                       /* HTML */ `<div class="allocation">
@@ -578,11 +642,10 @@ export function contributions(fin, state) {
                           <strong>${esc(a.asset_class)}</strong
                           ><span>${money(a.amount)} · ${percent(a.percent)}</span>
                         </div>
-                        <progress
-                          max="100"
-                          value="${Number(a.percent)}"
-                          aria-label="${esc(a.asset_class)}"
-                        ></progress>
+                        <div class="allocation-track" aria-hidden="true">
+                          <span class="allocation-fill" data-allocation="${esc(a.asset_class)}"
+                            style="inline-size:${Number(a.percent)}%;background:${classColor(a.asset_class)}"></span>
+                        </div>
                       </div>`,
                   )
                   .join('')
@@ -597,7 +660,7 @@ export function contributions(fin, state) {
         </section>
         ${
           allocations.length
-            ? /* HTML */ `<section>
+            ? /* HTML */ `<section class="panel">
                 ${sectionTitle('Carteira depois do aporte')}
                 <div class="rows">
                   ${allocations.map((a) => row(esc(a.asset_class), money(a.projected_value) + ' · ' + percent(a.projected_percent))).join('')}
@@ -605,7 +668,7 @@ export function contributions(fin, state) {
               </section>`
             : ''
         }
-        <section>
+        <section class="panel">
           <details class="accordion">
             <summary><strong>Por que essas classes?</strong>${icon('down', 16, 'rotate')}</summary>
             <div class="details-body">
@@ -613,8 +676,5 @@ export function contributions(fin, state) {
             </div>
           </details>
           <div class="actions">${op('targets', 'Ajustar metas')}${op('perfil', 'Perfil financeiro')}</div>
-        </section>
-      </div>
-    </div>`
-  );
+        </section>`;
 }

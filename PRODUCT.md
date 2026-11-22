@@ -4,7 +4,7 @@ O OpenChris é um site de finanças pessoais para usar pelo navegador do celular
 
 ## Experiência no celular
 
-A direção visual aprovada usa fundo escuro, texto claro, valores em destaque e navegação inferior. Hoje, Carteira, Gastos e Aportes ficam a um toque. Economia e Calculadoras ficam em Mais. A tela Hoje começa pelo assunto prioritário e mostra patrimônio investido, gastos do mês e aporte disponível. As imagens de referência usam dados fictícios.
+A direção visual aprovada usa fundo escuro com textura de carbono, cartão de patrimônio em titânio, texto claro e navegação inferior. Hoje, Carteira, Gastos e Aportes ficam a um toque. Economia e Calculadoras ficam em Mais. A tela Hoje destaca o patrimônio investido, os gastos do mês e o aporte disponível, seguidos das ações rápidas e do assunto prioritário. As imagens de referência usam dados fictícios.
 
 ## Carteira, gastos e aportes
 

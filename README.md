@@ -1,6 +1,6 @@
 # OpenChris
 
-Aplicação pessoal de finanças em Python com Flask, SQLAlchemy e PostgreSQL. A interface usa HTML, CSS e JavaScript e foi desenhada para o navegador do celular. O escopo e as telas de referência estão em [PRODUCT.md](PRODUCT.md) e [design/previas/v2-escuro](design/previas/v2-escuro).
+Aplicação pessoal de finanças em Python com Flask, SQLAlchemy e PostgreSQL. A interface usa HTML, CSS e JavaScript e foi desenhada para o navegador do celular. O escopo está em [PRODUCT.md](PRODUCT.md) e o design aprovado em [design/previas/v3-escuro-suave](design/previas/v3-escuro-suave).
 
 ## EasyPanel
 

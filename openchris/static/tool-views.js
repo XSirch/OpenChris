@@ -14,7 +14,7 @@ import {
   empty,
   note,
   row,
-} from './ui.js';
+} from './ui.js?v=carbono';
 
 const calculatorModes = {
   compound: 'Juros compostos',
@@ -27,7 +27,7 @@ export function calculators() {
     `<fieldset class="calc-field" data-hide-in="${mode}" ${mode === 'compound' ? 'hidden disabled' : ''}>${content}</fieldset>`;
   return (
     header('Calculadoras', '', true) +
-    /* HTML */ `<section class="narrow">
+    /* HTML */ `<section class="panel narrow">
       <form data-form="calc">
         <fieldset class="calc-modes">
           <legend class="sr">Escolha uma calculadora</legend>
@@ -98,7 +98,7 @@ function eventItem(e, active) {
       { scheduled: /Copom/i.test(e.title) ? 'Antes da decisão' : 'Divulgação prevista', published: 'Fato publicado', awaiting: 'Aguardando publicação' }[
         e.phase
       ] || 'Evento';
-  return /* HTML */ `<article class="event" id="evento-${esc(e.id)}">
+  return /* HTML */ `<article class="panel event" id="evento-${esc(e.id)}">
     <p class="note">${phase} · ${date(e.date)}</p>
     <h2>${esc(e.title)}</h2>
     ${a?.conclusion ? `<p class="fact"><strong>${esc(a.conclusion)}</strong></p>` : ''}${e.fact ? `<p class="fact"><strong>Fato publicado</strong> · ${esc(e.fact)}</p>` : !a?.conclusion ? note('O resultado ainda não foi publicado.') : ''}${a?.impact ? `<p class="notes">${esc(a.impact)}</p>` : ''}${
@@ -187,7 +187,7 @@ export function economy(data, state) {
         ${selected && !data.events?.some((e) => String(e.id) === selected) ? note('O evento solicitado não está disponível.') : ''}${
           sorted.length
             ? sorted.map((e) => eventItem(e, String(e.id) === selected)).join('')
-            : /* HTML */ `<section>
+            : /* HTML */ `<section class="panel">
                 <h2 class="section-title">
                   ${analyses ? 'Nenhuma análise publicada' : 'Agenda sem eventos'}
                 </h2>
@@ -195,7 +195,7 @@ export function economy(data, state) {
               </section>`
         }
       </div>
-      <section>
+      <section class="panel">
         <h2 class="section-title">Fontes acompanhadas</h2>
         ${sources || empty('Ainda não há registro de consulta às fontes.')}
       </section>
@@ -203,26 +203,24 @@ export function economy(data, state) {
   );
 }
 const tools = [
-  ['calculadoras', 'Calculadoras', 'Juros compostos, prazo e aporte mensal.'],
   ['economia', 'Economia', 'Agenda, cenários e análises.'],
+  ['calculadoras', 'Calculadoras', 'Juros compostos, prazo e aporte mensal.'],
   ['perfil', 'Perfil financeiro', 'Objetivos, reserva e tolerância a perdas.'],
   ['banco', 'Conexões e extratos', 'Bancos conectados e importação de arquivos.'],
   ['pesquisa', 'Agentes e pesquisas', 'Modelos, esforço de raciocínio e fila de tarefas.'],
   ['sair', 'Sair da conta', ''],
 ];
 export function more() {
+  const item = ([key, title, subtitle], navigate) => {
+    const content = `<span class="tool-icon">${icon(key, 19)}</span>
+      <span class="tool-title">${title}${subtitle ? `<small>${subtitle}</small>` : ''}</span>${icon('right', 16)}`;
+    return navigate ? link(key, content, 'row-link') : action(key, content, 'row-link');
+  };
   return (
     header('Mais') +
-    /* HTML */ `<div class="tools-list narrow">
-      ${tools
-        .map(([key, title, subtitle], i) => {
-          const content =
-            icon(key, 24) +
-            `<span class="tool-title">${title}${subtitle ? `<small>${subtitle}</small>` : ''}</span>` +
-            icon('right', 16);
-          return i < 2 ? link(key, content, 'row-link') : action(key, content, 'row-link');
-        })
-        .join('')}
+    /* HTML */ `<div class="columns">
+      <section class="panel tools-list"><h2>Ferramentas</h2>${tools.slice(0, 2).map(tool => item(tool, true)).join('')}</section>
+      <section class="panel tools-list"><h2>Sua conta</h2>${tools.slice(2).map(tool => item(tool, false)).join('')}</section>
     </div>`
   );
 }

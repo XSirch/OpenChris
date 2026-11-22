@@ -1,7 +1,7 @@
-import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js';
-import { today, portfolio, mountPortfolio, spending, contributions } from './finance-views.js';
-import { mountPerformance } from './performance.js';
-import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js';
+import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono';
+import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono';
+import { mountPerformance } from './performance.js?v=carbono';
+import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono';
 import {
   advanceForm,
   linkChargeForm,
@@ -12,9 +12,8 @@ import {
   importForm,
   positionForm,
   profileForm,
-  simulateForm,
   targetsForm,
-} from './forms.js';
+} from './forms.js?v=carbono';
 
 const titles = {
   hoje: 'Hoje',
@@ -29,6 +28,10 @@ const nav = document.querySelector('#nav-links'),
   main = document.querySelector('main'),
   dlg = document.querySelector('#dialog'),
   body = document.querySelector('#dialog-body');
+const notice = document.querySelector('#notice');
+const noticeText = document.querySelector('#notice-text');
+const noticeStatus = document.querySelector('#notice-status');
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const state = {
   route: '',
   month: isoToday().slice(0, 7),
@@ -44,22 +47,72 @@ let finance = null,
   economic = null,
   loadId = 0,
   dialogId = 0,
-  noticeTimer;
+  noticeTimer,
+  noticeOrigin,
+  pointerOnNotice = false;
 const currentMonth = () => isoToday().slice(0, 7);
-const financePath = (month = state.month) =>
-  '/api/finance?' + new URLSearchParams({ month, ...(has(state.amount) ? { amount: state.amount } : {}) });
-function notify(message) {
+const financePath = (month = state.month, amount = state.amount) =>
+  '/api/finance?' + new URLSearchParams({ month, ...(has(amount) ? { amount } : {}) });
+function dismissNotice() {
   clearTimeout(noticeTimer);
-  const el = document.querySelector('#notice');
-  el.textContent = message;
-  noticeTimer = setTimeout(() => (el.textContent = ''), 5000);
+  if (notice.inert) return;
+  const restoreFocus = notice.contains(document.activeElement);
+  notice.inert = true;
+  pointerOnNotice = false;
+  document.removeEventListener('pointermove', trackNoticePointer);
+  noticeStatus.replaceChildren();
+  if (restoreFocus) (noticeOrigin?.isConnected ? noticeOrigin : main).focus({ preventScroll: true });
 }
+function scheduleNotice() {
+  clearTimeout(noticeTimer);
+  if (!notice.inert && !document.hidden && !pointerOnNotice && !notice.matches(':focus-within')) {
+    noticeTimer = setTimeout(dismissNotice, 6000);
+  }
+}
+function trackNoticePointer(event) {
+  if (event.pointerType === 'touch') return;
+  const { left, right, top, bottom } = notice.getBoundingClientRect();
+  const inside = event.clientX >= left && event.clientX <= right && event.clientY >= top && event.clientY <= bottom;
+  if (pointerOnNotice === inside) return;
+  pointerOnNotice = inside;
+  scheduleNotice();
+}
+function notify(message, isError = false, origin = document.activeElement) {
+  if (dlg.open) {
+    if (isError) dialogError(message);
+    else document.querySelector('#dialog-status').textContent = message;
+    return;
+  }
+  noticeOrigin = origin;
+  noticeText.textContent = message;
+  document.querySelector('#notice-icon').innerHTML = icon(isError ? 'alert' : 'check', 15);
+  notice.classList.toggle('is-error', isError);
+  notice.classList.remove('in-top');
+  const area = notice.getBoundingClientRect();
+  const overlaps = [...main.querySelectorAll('form .actions')].some(group => {
+    const r = group.getBoundingClientRect();
+    return r.bottom > area.top - 8 && r.top < area.bottom + 8 && r.right > area.left && r.left < area.right;
+  });
+  notice.classList.toggle('in-top', overlaps);
+  notice.inert = false;
+  noticeStatus.replaceChildren(document.createTextNode(message));
+  document.addEventListener('pointermove', trackNoticePointer, { passive: true });
+  scheduleNotice();
+}
+notice.querySelector('button').addEventListener('click', dismissNotice);
+notice.addEventListener('focusin', () => clearTimeout(noticeTimer));
+notice.addEventListener('focusout', () => queueMicrotask(scheduleNotice));
+document.addEventListener('visibilitychange', scheduleNotice);
+document.querySelector('#top-date').innerHTML = icon('economia', 17) + date(isoToday(), { day: 'numeric', month: 'long', year: 'numeric' });
+
 function setNav() {
   const selected = ['economia', 'calculadoras'].includes(state.route) ? 'mais' : state.route;
+  if (nav.dataset.selected === selected) return;
+  nav.dataset.selected = selected;
   nav.innerHTML = ['hoje', 'carteira', 'gastos', 'aportes', 'mais']
     .map(
       (k) =>
-        `<a data-route href="/${k}" ${k === selected ? 'aria-current="page"' : ''}>${icon(k, 23)}<span>${titles[k]}</span></a>`,
+        `<a data-route href="/${k}" ${k === selected ? 'aria-current="page"' : ''}><span class="nav-icon">${icon(k, 21)}</span><span>${titles[k]}</span></a>`,
     )
     .join('');
 }
@@ -68,12 +121,14 @@ function closeDialog() {
   if (dlg.open) dlg.close();
 }
 function dialog(title, content) {
+  dismissNotice();
   const id = ++dialogId;
   document.querySelector('#dialog-title').textContent = title;
   body.innerHTML = content;
   document.querySelector('#dialog-error').textContent = '';
+  document.querySelector('#dialog-status').textContent = '';
   if (!dlg.open) dlg.showModal();
-  dlg.scrollTop = 0;
+  body.scrollTop = 0;
   return id;
 }
 function dialogError(msg) {
@@ -88,6 +143,19 @@ function refreshFocus() {
   main.focus({ preventScroll: true });
   window.scrollTo(0, 0);
 }
+function focusDestination(route, params) {
+  let target;
+  if (route === 'aportes' && params.get('abrir') === 'simulacao') {
+    target = main.querySelector('#valor-aporte');
+  } else if (route === 'gastos' && (params.has('lancamento') || params.has('lista'))) {
+    const entry = params.get('lancamento');
+    target = (entry && document.getElementById('lancamento-' + entry)) || main.querySelector('#lancamentos');
+  }
+  if (target) {
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: 'start' });
+  }
+}
 function go(href) {
   const url = new URL(href, location.href);
   if (url.origin !== location.origin) return;
@@ -100,8 +168,10 @@ async function render(change = false) {
     url = new URL(location.href);
   const path = url.pathname.split('/').filter(Boolean)[0] || 'hoje';
   const route = Object.hasOwn(titles, path) ? path : 'hoje';
+  const changedRoute = Boolean(state.route && state.route !== route);
   if (change) {
     closeDialog();
+    dismissNotice();
     if (state.route !== route) {
       state.category = '';
       if (route !== 'aportes') state.amount = null;
@@ -114,6 +184,7 @@ async function render(change = false) {
   state.route = route;
   document.title = titles[route] + ' · OpenChris';
   setNav();
+  main.classList.remove('route-enter');
   main.setAttribute('aria-busy', 'true');
   if (change) {
     main.innerHTML = '<p class="loading" role="status">Carregando…</p>';
@@ -135,14 +206,14 @@ async function render(change = false) {
       const [f, e, perf] = await Promise.all([
         api(financePath(month)),
         route === 'hoje' ? api('/api/economy').catch(() => null) : null,
-        route === 'carteira' ? api('/api/portfolio/performance').catch(() => null) : null,
+        ['hoje', 'carteira'].includes(route) ? api('/api/portfolio/performance').catch(() => null) : null,
       ]);
       if (seq !== loadId) return;
       finance = f;
       performance = perf;
       content =
         route === 'hoje'
-          ? today(f, e)
+          ? today(f, e, performance)
           : route === 'carteira'
             ? portfolio(f)
             : route === 'gastos'
@@ -151,15 +222,14 @@ async function render(change = false) {
     }
     if (seq !== loadId) return;
     main.innerHTML = content;
+    main.classList.toggle('route-enter', changedRoute);
     if (route === 'carteira') {
       mountPortfolio(main, finance, state.portfolio);
       mountPerformance(main, performance);
     }
     main.setAttribute('aria-busy', 'false');
     if (change && route === 'mais' && url.searchParams.get('abrir') === 'conexoes') void openAction('banco');
-    if (change && route === 'aportes' && url.searchParams.get('abrir') === 'simulacao') {
-      void openAction('simulate').catch(handleError);
-    }
+    if (change) focusDestination(route, url.searchParams);
   } catch (err) {
     if (seq !== loadId) return;
     main.setAttribute('aria-busy', 'false');
@@ -276,8 +346,7 @@ async function openAction(key, node) {
     return;
   }
   if (key === 'clear-simulation') {
-    state.amount = null;
-    await render();
+    await submitSimulation(node.form, true);
     return;
   }
   if (key === 'clear-calculator') {
@@ -358,7 +427,7 @@ async function openAction(key, node) {
       }
     } catch (error) {
       if (dialogId === d && dlg.open) dialogError(error.message);
-      else notify(error.message);
+      else notify(error.message, true);
       node.disabled = false;
     }
     return;
@@ -367,7 +436,6 @@ async function openAction(key, node) {
     perfil: 'Perfil financeiro',
     targets: 'Metas por classe',
     balance: 'Saldo e compromissos',
-    simulate: 'Simular outro valor',
     advance: 'Antecipar parcelas',
     position: 'Cadastrar posição',
     'edit-position': 'Editar posição',
@@ -382,7 +450,6 @@ async function openAction(key, node) {
     perfil: () => profileForm(f.profile),
     targets: () => targetsForm(f.profile),
     balance: () => balanceForm(f.profile, f.contribution),
-    simulate: () => simulateForm(f.contribution),
     advance: () => advanceForm(f),
     position: () => positionForm(f),
     'edit-position': () =>
@@ -402,7 +469,7 @@ async function openAction(key, node) {
 }
 function handleError(err) {
   if (dlg.open) dialogError(err.message);
-  else notify(err.message);
+  else notify(err.message, true);
 }
 document.addEventListener('click', (ev) => {
   const node = ev.target.closest('[data-route],[data-action]');
@@ -445,6 +512,11 @@ document.addEventListener('change', (ev) => {
 document.addEventListener('input', (ev) => {
   const field = ev.target;
   const form = field.form;
+  if (form?.dataset.form === 'simulate') {
+    field.removeAttribute('aria-invalid');
+    form.querySelector('#simulation-error').textContent = '';
+    dismissNotice();
+  }
   if (form?.dataset.form === 'targets') updateTargetTotal(form);
   if (form?.dataset.form !== 'calc') return;
   if (field.name === 'rate' || ['principal', 'monthly', 'target'].includes(field.name)) {
@@ -484,6 +556,70 @@ function calculatorNumber(value, rate = false) {
       (!rate && /^\d{1,3}(?:\.\d{3})+$/.test(clean)))
     return clean.replaceAll('.', '').replace(',', '.');
   return clean;
+}
+
+function updateDistribution(result) {
+  const output = main.querySelector('#contribution-result');
+  const former = new Map();
+  if (!reducedMotion.matches) {
+    for (const bar of output.querySelectorAll('[data-allocation]')) {
+      const trackWidth = bar.parentElement.getBoundingClientRect().width;
+      if (trackWidth > 0) former.set(bar.dataset.allocation, bar.getBoundingClientRect().width / trackWidth);
+    }
+  }
+  output.innerHTML = contributionResults(result);
+  if (reducedMotion.matches) return;
+  for (const bar of output.querySelectorAll('[data-allocation]')) {
+    const fraction = parseFloat(bar.style.inlineSize) / 100;
+    const start = former.get(bar.dataset.allocation) ?? 0;
+    if (fraction > 0) {
+      bar.style.setProperty('--start-scale', start / fraction);
+      bar.classList.add('recalculated');
+    }
+  }
+}
+
+async function submitSimulation(form, clear = false) {
+  const submit = form.querySelector('[type=submit]');
+  const reset = form.querySelector('[data-action="clear-simulation"]');
+  const field = form.elements.amount;
+  const error = form.querySelector('#simulation-error');
+  if (submit.disabled) return;
+  const original = field.value;
+  const amount = clear ? null : calculatorNumber(original);
+  dismissNotice();
+  error.textContent = '';
+  field.removeAttribute('aria-invalid');
+  if (!clear && !/^\d+(?:\.\d{1,2})?$/.test(amount)) {
+    error.textContent = 'Informe um valor em reais, por exemplo 1.250,50.';
+    field.setAttribute('aria-invalid', 'true');
+    field.focus();
+    return;
+  }
+  const sequence = loadId;
+  submit.disabled = reset.disabled = true;
+  form.setAttribute('aria-busy', 'true');
+  try {
+    const result = await api(financePath(currentMonth(), amount));
+    if (!form.isConnected || sequence !== loadId || field.value !== original) return;
+    state.amount = amount;
+    finance = result;
+    updateDistribution(result);
+    reset.hidden = clear;
+    if (clear) {
+      const available = result.contribution.simulated;
+      field.value = has(available) ? String(available).replace('.', ',') : '';
+      field.focus({ preventScroll: true });
+    }
+    notify(clear ? 'Valor inicial restaurado.' : 'Simulação de ' + money(result.contribution.simulated) + ' recalculada.', false, clear ? field : submit);
+  } catch (err) {
+    if (form.isConnected && sequence === loadId && field.value === original) {
+      error.textContent = err.message;
+    }
+  } finally {
+    submit.disabled = reset.disabled = false;
+    form.removeAttribute('aria-busy');
+  }
 }
 
 function formatCalculatorField(field, fixed = false, editing = false) {
@@ -583,6 +719,7 @@ function updateTargetTotal(form) {
 async function submit(form) {
   const key = form.dataset.form;
   if (key === 'calc') return submitCalculator(form);
+  if (key === 'simulate') return submitSimulation(form);
   const fd = new FormData(form),
     data = Object.fromEntries(fd),
     btn = form.querySelector('[type=submit]');
@@ -603,13 +740,6 @@ async function submit(form) {
         body.querySelector(`[data-action="agent-settings"][data-id="${form.dataset.kind}"]`)?.focus();
       }
       notify('Escolha salva.');
-      return;
-    }
-    if (key === 'simulate') {
-      state.amount = data.amount;
-      closeDialog();
-      await render();
-      notify('Simulação atualizada.');
       return;
     }
     let endpoint,
@@ -688,7 +818,7 @@ async function submit(form) {
     notify(message);
   } catch (err) {
     if (currentDialog === dialogId && dlg.open) dialogError(err.message);
-    else notify(err.message);
+    else notify(err.message, true);
   } finally {
     btn.disabled = false;
   }
