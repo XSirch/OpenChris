@@ -15,8 +15,8 @@ import {
   empty,
   note,
   amountField,
-} from './ui.js?v=carbono-2';
-import { performancePanel, balanceTrend } from './performance.js?v=carbono-2';
+} from './ui.js?v=carbono-3';
+import { performancePanel, balanceTrend } from './performance.js?v=carbono-3';
 
 export const kinds = {
   unknown: 'A classificar',

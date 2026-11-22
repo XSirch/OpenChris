@@ -26,6 +26,7 @@ const icons = {
     '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="9" r="3.2"/><path d="M5 19a7.3 7.3 0 0 1 14 0"/>',
   banco: '<path d="m3 8 9-5 9 5M4 9h16M6 11v7m6-7v7m6-7v7M3 21h18"/>',
   pesquisa: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
+  documentos: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8m-8 4h8"/>',
   sair: '<path d="M12 4H4v16h8m3-13 5 5-5 5M8 12h12"/>',
   importar: '<path d="M12 17V3m-5 5 5-5 5 5M4 15v6h16v-6"/>',
 };

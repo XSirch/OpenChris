@@ -20,6 +20,14 @@ Na Carteira ou em Gastos, **Importar extrato** oferece o cabeçalho CSV para dow
 
 Use um `external_id` estável em cada linha, especialmente se houver duas compras iguais no mesmo dia. O código original da Pluggy e o código com prefixo `pluggy:` identificam o mesmo registro. O sistema também procura correspondências entre o banco e o CSV pela posição ou pelos dados da compra. Quando a correspondência for ambígua, indique o identificador da linha correta ou use `separate=sim` para uma operação realmente distinta.
 
+## Documentos
+
+Em **Mais → Documentos**, guarde PDFs ou arquivos TXT em UTF-8 de até 5 MB. Declare o tipo e, se souber, o ano dos dados. Um PDF digitalizado ou protegido por senha pode ser guardado e baixado, mas fica indisponível para consulta até que você envie uma versão com texto legível.
+
+Ative **Permitir no chat** para que perguntas relevantes possam consultar trechos do arquivo. Você também pode escolher um documento específico ao perguntar. O servidor busca o texto localmente e passa ao Codex os trechos selecionados. As respostas e suas referências ficam no histórico.
+
+Configure uma chave [Fernet](https://cryptography.io/en/latest/fernet/) em `OPENCHRIS_DOCUMENT_KEY` no ambiente do Compose. Para gerar uma, use `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`. O site e o worker usam a mesma chave para abrir os arquivos e seus índices criptografados no banco. Guarde a chave separadamente do backup do PostgreSQL e mantenha seu valor nas atualizações.
+
 ## Agentes e alertas
 
 No console do contêiner **worker**, execute `codex login --device-auth` e conclua a autorização no site oficial da OpenAI. Confira com `codex login status`. A autenticação fica no volume privado do worker. O chat financeiro e as rotinas automáticas usam a franquia do Codex da conta ChatGPT do titular. A fila aguarda quando a sessão ou a franquia exigem uma pausa. `ASSET_SOURCE_HOSTS` aceita domínios exatos de emissores ou gestores a incluir na pesquisa. [Autenticação do Codex](https://developers.openai.com/codex/auth)

@@ -16,7 +16,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import JSON, Date, DateTime, String, func, or_, select, update
 from sqlalchemy.orm import Mapped, mapped_column
 
-from . import finance
+from . import documents, finance
 from .agent_runner import (AgentPause, ModelUnavailable, OFFICIAL_DOMAINS, SCHEMAS, codex_result,
                            model_catalog, normalized, source_hosts, validate_result, verify_fields)
 from .db import Base, db_session
@@ -385,8 +385,18 @@ def prepare(db, jobs):
         bank = bank_snapshot(db)
         view = finance.dashboard(db, month=data["month"], today=day(), bank=bank)
         spending = view["spending"]
-        return {"pergunta": data["question"], "conversa_anterior": data["previous"],
+        previous = data.get("previous", [])
+        passages, document_notice = documents.chat_passages(
+            db, data["question"], data.get("document", "auto"), previous[-1] if previous else None,
+        )
+        # Answers informed by documents are visible in the UI, but are never copied into later prompts.
+        history = [{"question": row["question"], "month": row["month"],
+                    **({"answer": row.get("answer")} if not row.get("consulted_documents") else {})}
+                   for row in previous]
+        return {"pergunta": data["question"], "conversa_anterior": history,
                 "pesquisas_economicas": _chat_research(db, data),
+                "documentos": passages, "aviso_documentos": document_notice,
+                "perfil_cadastrado": {k: view["profile"][k] for k in ("goal", "horizon_months", "risk", "reserve")},
                 "mes": view["month"], "dados_ate": spending["cutoff"],
                 "receitas_classificadas": str(sum(finance.money(e["amount"]) for e in spending["entries"]
                                                   if e["kind"] == "income")),
@@ -460,8 +470,14 @@ def save_result(db, jobs, context, out, verified):
         evidence = {event["id"]: event for event in context["pesquisas_economicas"]}
         references = [{"id": key, "title": evidence[key]["titulo"], "date": evidence[key]["data"]}
                       for key in dict.fromkeys(out["event_ids"]) if key in evidence]
+        excerpts = {item["ref"]: item for item in context["documentos"]}
+        cited = [excerpts[key] for key in dict.fromkeys(out["document_ids"]) if key in excerpts]
+        sources = {(item["document_id"], item["pagina"]): {"id": item["document_id"], "page": item["pagina"], "year": item["ano"]}
+                   for item in cited}
         job.payload = {"question": data["question"], "month": data["month"], "answer": out["answer"],
-                       "references": references}
+                       "references": references, "document_references": list(sources.values()),
+                       "document_notice": context["aviso_documentos"],
+                       "consulted_documents": list(dict.fromkeys(item["document_id"] for item in excerpts.values()))}
     elif job.kind == "expense":
         answers = {item["id"]: item for item in out["items"]}
         if len(answers) != len(out["items"]) or set(answers) != {r.payload["id"] for r in jobs}:
@@ -569,7 +585,12 @@ def run_one():
             job.notice = ""
         ids = [job.id for job in jobs]
     try:
-        out = send_telegram(context) if kind == "telegram" else codex_result(kind, context, **options)
+        if kind == "chat":
+            model_context = {**context, "documentos": [{k: v for k, v in excerpt.items() if k != "document_id"}
+                                                        for excerpt in context["documentos"]]}
+        else:
+            model_context = context
+        out = send_telegram(context) if kind == "telegram" else codex_result(kind, model_context, **options)
         verified = None
         if kind != "telegram":
             validate_result(out, SCHEMAS[kind])
@@ -671,16 +692,27 @@ def finance_chat():
                 return jsonify(error="O worker da IA está indisponível no momento."), 503
             if db.scalar(select(Job.id).where(Job.kind == "chat", Job.state.in_(("pending", "running", "retry"))).limit(1)):
                 return jsonify(error="Aguarde a resposta da pergunta anterior."), 409
+            try:
+                selected = documents.chat_selection(db, data.get("document", "auto"))
+            except ValueError as error:
+                return jsonify(error=str(error)), 409
             previous = list(db.scalars(select(Job).where(Job.kind == "chat", Job.state == "done")
                                        .order_by(Job.id.desc()).limit(3)))
             db.add(Job(key="chat:" + uuid4().hex, kind="chat", priority=1,
-                       payload={"question": question.strip(), "month": month,
-                                "previous": [row.payload for row in reversed(previous)]}))
+                       payload={"question": question.strip(), "month": month, "document": selected,
+                                "previous": [{k: v for k, v in row.payload.items()
+                                              if k in ("question", "month", "references", "consulted_documents")
+                                              or (k == "answer" and not row.payload.get("consulted_documents"))}
+                                             for row in reversed(previous)]}))
             return jsonify(status="pending"), 202
         control = db.get(Runtime, "codex")
         jobs = list(db.scalars(select(Job).where(Job.kind == "chat").order_by(Job.id.desc()).limit(8)))
+        labels = {}
         return jsonify(messages=[{"question": job.payload["question"], "month": job.payload["month"],
                                   "answer": job.payload.get("answer"), "references": job.payload.get("references", []),
+                                  "document_references": list(documents.chat_source_labels(
+                                      db, job.payload.get("document_references", []), labels)),
+                                  "document_notice": job.payload.get("document_notice", ""),
                                   "state": job.state, "notice": job.notice}
                                  for job in reversed(jobs)],
                        waiting=active_codex_notice(control))

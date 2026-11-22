@@ -49,7 +49,7 @@ def test_finance_chat_uses_worker_and_financial_context(site, monkeypatch):
         assert kind == "chat" and context["mes"] == month
         assert context["gastos"]["total"] == "92.31"
         assert not context["pesquisas_economicas"]
-        return {"answer": "O gasto foi de R$ 92,31.", "event_ids": []}
+        return {"answer": "O gasto foi de R$ 92,31.", "event_ids": [], "document_ids": []}
 
     monkeypatch.setattr(jobs, "codex_result", answer)
     assert jobs.run_one()
@@ -75,7 +75,8 @@ def test_chat_links_only_research_supplied_to_worker(site, monkeypatch):
         report, = context["pesquisas_economicas"]
         assert report["analise_anterior"]["fase"] == "scheduled"
         assert report["analise"]["fase"] == "published"
-        return {"answer": "A conclusão mudou após a divulgação.", "event_ids": [report["id"], 999, report["id"]]}
+        return {"answer": "A conclusão mudou após a divulgação.", "event_ids": [report["id"], 999, report["id"]],
+                "document_ids": []}
 
     monkeypatch.setattr(jobs, "codex_result", answer)
     assert jobs.run_one()
@@ -105,7 +106,7 @@ def test_chat_and_background_tasks_ignore_previous_daily_limit(site, monkeypatch
     def answer(kind, context, **kwargs):
         calls.append(kind)
         if kind == "chat":
-            return {"answer": "Resposta de teste.", "event_ids": []}
+            return {"answer": "Resposta de teste.", "event_ids": [], "document_ids": []}
         return {"items": [dict(id=context[0]["id"], kind="expense", category="Mercado", confident=True)]}
 
     monkeypatch.setattr(jobs, "codex_result", answer)
@@ -135,7 +136,9 @@ def test_finance_chat_respects_and_recovers_from_codex_pause(site, monkeypatch):
     with db_session() as db:
         job = db.scalar(select(jobs.Job))
         job.ready_at = jobs.now() - timedelta(seconds=1)
-    monkeypatch.setattr(jobs, "codex_result", lambda *args, **kwargs: {"answer": "Resposta de teste.", "event_ids": []})
+    monkeypatch.setattr(jobs, "codex_result", lambda *args, **kwargs: {
+        "answer": "Resposta de teste.", "event_ids": [], "document_ids": [],
+    })
     assert not jobs.run_one()
     with db_session() as db:
         db.get(jobs.Runtime, "codex").until = jobs.now() - timedelta(seconds=1)

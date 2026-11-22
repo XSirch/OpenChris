@@ -49,8 +49,8 @@ def create_app(config=None):
     auth_epoch = hmac.new(app.secret_key.encode(), password.encode(), hashlib.sha256).hexdigest()
     failures = OrderedDict()
     login_lock = Lock()
-    from . import automation, banking, finance_api
-    for blueprint in (finance_api.bp, banking.bp, automation.bp):
+    from . import automation, banking, documents, finance_api
+    for blueprint in (finance_api.bp, banking.bp, automation.bp, documents.bp):
         app.register_blueprint(blueprint)
     if not app.config.get("SKIP_INIT"):
         initialize()
@@ -119,7 +119,7 @@ def create_app(config=None):
                 dest = request.args.get("next", "/")
                 if (not dest.startswith("/") or dest.startswith("//") or "\\" in dest or
                         urlsplit(dest).path not in {"/", "/hoje", "/carteira", "/gastos", "/aportes",
-                                                    "/mais", "/economia", "/calculadoras"}):
+                                                    "/mais", "/economia", "/calculadoras", "/documentos"}):
                     dest = "/"
                 return redirect(dest)
             error = "Senha incorreta."
@@ -131,7 +131,7 @@ def create_app(config=None):
         return redirect(url_for("login"), code=303)
 
     @app.get("/")
-    @app.get("/<any(hoje,carteira,gastos,aportes,mais,economia,calculadoras):area>")
+    @app.get("/<any(hoje,carteira,gastos,aportes,mais,economia,calculadoras,documentos):area>")
     def index(area=None):
         return render_template("index.html", csrf_token=session["csrf"])
 

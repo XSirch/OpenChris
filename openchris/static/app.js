@@ -1,7 +1,8 @@
-import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono-2';
-import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono-2';
-import { mountPerformance } from './performance.js?v=carbono-2';
-import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono-2';
+import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js?v=carbono-3';
+import { today, portfolio, mountPortfolio, spending, contributions, contributionResults } from './finance-views.js?v=carbono-3';
+import { mountPerformance } from './performance.js?v=carbono-3';
+import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js?v=carbono-3';
+import { documentsView, uploadDocumentForm, deleteDocumentForm, chatDocumentChoices, chatDocumentReferences } from './documents.js?v=carbono-3';
 import {
   advanceForm,
   linkChargeForm,
@@ -13,7 +14,7 @@ import {
   positionForm,
   profileForm,
   targetsForm,
-} from './forms.js?v=carbono-2';
+} from './forms.js?v=carbono-3';
 
 const titles = {
   hoje: 'Hoje',
@@ -23,6 +24,7 @@ const titles = {
   mais: 'Mais',
   economia: 'Economia',
   calculadoras: 'Calculadoras',
+  documentos: 'Documentos',
 };
 const nav = document.querySelector('#nav-links'),
   main = document.querySelector('main'),
@@ -45,6 +47,7 @@ let finance = null,
   conn = null,
   agents = null,
   economic = null,
+  documentLibrary = null,
   loadId = 0,
   dialogId = 0,
   noticeTimer,
@@ -106,7 +109,7 @@ document.addEventListener('visibilitychange', scheduleNotice);
 document.querySelector('#top-date').innerHTML = icon('economia', 17) + date(isoToday(), { day: 'numeric', month: 'long', year: 'numeric' });
 
 function setNav() {
-  const selected = ['economia', 'calculadoras'].includes(state.route) ? 'mais' : state.route;
+  const selected = ['economia', 'calculadoras', 'documentos'].includes(state.route) ? 'mais' : state.route;
   if (nav.dataset.selected === selected) return;
   nav.dataset.selected = selected;
   nav.innerHTML = ['hoje', 'carteira', 'gastos', 'aportes', 'mais']
@@ -195,6 +198,12 @@ async function render(change = false) {
     let content, performance;
     if (route === 'calculadoras') content = calculators();
     else if (route === 'mais') content = more();
+    else if (route === 'documentos') {
+      const library = await api('/api/documents');
+      if (seq !== loadId) return;
+      documentLibrary = library;
+      content = documentsView(library);
+    }
     else if (route === 'economia') {
       const data = await api(
         '/api/economy' + (state.event ? '?evento=' + encodeURIComponent(state.event) : ''),
@@ -324,9 +333,38 @@ async function openAction(key, node) {
       <div class="stack tight finance-chat" data-chat-log role="log" aria-label="Conversa financeira"></div>
       <form data-form="finance-chat">
         <label class="field">Sua pergunta <textarea name="question" rows="3" maxlength="1000" required></textarea></label>
+        <div class="chat-document-control" data-chat-documents>${link('documentos', 'Gerenciar documentos')}</div>
         <button type="submit" class="primary block">Enviar pergunta</button>
       </form>`);
+    void loadChatDocuments(chat);
     await refreshFinanceChat(chat);
+    return;
+  }
+  if (key === 'document-upload' && documentLibrary?.available) {
+    dialog('Adicionar documento', uploadDocumentForm(documentLibrary));
+    return;
+  }
+  if (key === 'document-delete' || key === 'document-toggle') {
+    const doc = documentLibrary?.items.find(item => item.id === id);
+    if (!doc || state.route !== 'documentos') return;
+    if (key === 'document-delete') {
+      dialog('Excluir documento', deleteDocumentForm(doc));
+      body.querySelector('[data-action="fechar"]').focus();
+    } else {
+      const seq = loadId;
+      node.disabled = true;
+      try {
+        const result = await api('/api/documents/' + encodeURIComponent(doc.id) + '/chat', { enabled: !doc.chat_enabled });
+        if (seq !== loadId) return;
+        await render();
+        if (state.route !== 'documentos') return;
+        const current = [...main.querySelectorAll('[data-action="document-toggle"]')].find(button => button.dataset.id === id);
+        current?.focus({ preventScroll: true });
+        notify(result.chat_enabled ? 'O chat já pode consultar este documento.' : 'Consulta pelo chat pausada.');
+      } finally {
+        node.disabled = false;
+      }
+    }
     return;
   }
   if (key === 'fechar') {
@@ -675,6 +713,20 @@ async function submitCalculator(form) {
   }
 }
 
+async function loadChatDocuments(id) {
+  try {
+    const library = await api('/api/documents');
+    if (dialogId === id && dlg.open) {
+      body.querySelector('[data-chat-documents]').innerHTML = chatDocumentChoices(library);
+    }
+  } catch {
+    if (dialogId === id && dlg.open) {
+      body.querySelector('[data-chat-documents]').insertAdjacentHTML('afterbegin',
+        '<p class="note">Não foi possível carregar os documentos. Abra o chat novamente para consultá-los.</p>');
+    }
+  }
+}
+
 async function refreshFinanceChat(id) {
   while (dialogId === id && dlg.open) {
     const { messages, waiting } = await api('/api/finance-chat');
@@ -692,7 +744,9 @@ async function refreshFinanceChat(id) {
           : waiting || m.notice || 'Pergunta na fila…';
       return `<div class="inset"><p><strong>Você · ${esc(m.month.split('-').reverse().join('/'))}</strong></p>
         <p class="chat-text">${esc(m.question)}</p>
-        ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>${references}`
+        ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>${references}
+          ${chatDocumentReferences(m.document_references)}
+          ${m.document_notice ? '<p class="note">' + esc(m.document_notice) + '</p>' : ''}`
           : `<p class="note">${esc(status)}</p>`}</div>`;
     }).join('');
     if (log.innerHTML !== content) log.innerHTML = content;
@@ -728,9 +782,27 @@ async function submit(form) {
   dialogError('');
   try {
     if (key === 'finance-chat') {
-      await api('/api/finance-chat', { question: data.question, month: state.month });
+      await api('/api/finance-chat', { question: data.question, month: state.month, document: data.document || 'none' });
       form.reset();
       await refreshFinanceChat(currentDialog);
+      return;
+    }
+    if (key === 'document-upload' || key === 'document-delete') {
+      const upload = key === 'document-upload';
+      if (upload && fd.get('file')?.size > Number(form.dataset.maxSize)) {
+        throw new Error('O arquivo excede 5 MB.');
+      }
+      const endpoint = upload ? '/api/documents' : '/api/documents/' + encodeURIComponent(form.dataset.id) + '/delete';
+      const result = await api(endpoint, upload ? fd : {});
+      if (currentDialog !== dialogId || !dlg.open) return;
+      closeDialog();
+      await render();
+      if (state.route !== 'documentos') return;
+      main.querySelector('#saved-documents')?.focus({ preventScroll: true });
+      const message = !upload ? 'Documento excluído.' : result.reading === 'ready' ? 'Documento guardado.'
+        : result.reading === 'partial' ? 'Documento guardado. A leitura pelo chat é parcial.'
+          : 'Documento guardado. O texto não está disponível para o chat.';
+      notify(message);
       return;
     }
     if (key === 'agent-settings') {

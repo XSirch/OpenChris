@@ -14,7 +14,7 @@ import {
   empty,
   note,
   row,
-} from './ui.js?v=carbono-2';
+} from './ui.js?v=carbono-3';
 
 const calculatorModes = {
   compound: 'Juros compostos',
@@ -206,6 +206,7 @@ const tools = [
   ['economia', 'Economia', 'Agenda, cenários e análises.'],
   ['calculadoras', 'Calculadoras', 'Juros compostos, prazo e aporte mensal.'],
   ['perfil', 'Perfil financeiro', 'Objetivos, reserva e tolerância a perdas.'],
+  ['documentos', 'Documentos', 'Declarações, informes e arquivos para o chat.'],
   ['banco', 'Conexões e extratos', 'Bancos conectados e importação de arquivos.'],
   ['pesquisa', 'Agentes e pesquisas', 'Modelos, esforço de raciocínio e fila de tarefas.'],
   ['sair', 'Sair da conta', ''],
@@ -214,7 +215,7 @@ export function more() {
   const item = ([key, title, subtitle], navigate) => {
     const content = `<span class="tool-icon">${icon(key, 19)}</span>
       <span class="tool-title">${title}${subtitle ? `<small>${subtitle}</small>` : ''}</span>${icon('right', 16)}`;
-    return navigate ? link(key, content, 'row-link') : action(key, content, 'row-link');
+    return navigate || key === 'documentos' ? link(key, content, 'row-link') : action(key, content, 'row-link');
   };
   return (
     header('Mais') +

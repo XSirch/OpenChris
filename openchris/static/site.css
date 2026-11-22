@@ -411,6 +411,23 @@ dialog::backdrop { background: rgb(9 12 16 / 68%); }
 .dialog-copy { color: var(--muted); margin-bottom: 14px; }
 .finance-chat:not(:empty) { margin-bottom: 16px; }
 .chat-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-block: 4px 10px; }
+.chat-document-control { margin-top: 12px; }
+.document-library { display: grid; gap: 16px; }
+.document-heading { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; }
+.document-heading > :first-child { flex: 1 1 280px; min-width: 0; }
+.document-heading .note { margin-top: 5px; }
+.document-heading-actions { gap: 4px 12px; }
+.document-list { margin: 0; padding: 0; list-style: none; }
+.document-row { display: grid; grid-template-columns: auto minmax(0,1fr); align-items: start; gap: 4px 12px; padding: 14px 0 4px; border-top: 1px solid var(--line); }
+.document-row:last-child { padding-bottom: 0; }
+.document-info { overflow-wrap: anywhere; }
+.document-info h3 { text-wrap: wrap; }
+.document-info .note { margin-top: 4px; }
+.document-status { margin-top: 5px; font-size: .9rem; }
+.document-actions { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0 12px; }
+.document-actions .text-btn { font-size: .9rem; }
+.document-actions .warm { color: var(--warm); }
+.document-actions .warm:hover { color: var(--text); }
 [data-form="finance-chat"] textarea { width: 100%; resize: vertical; font: inherit; color: var(--text); background: var(--input); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
 [data-form="finance-chat"] button { margin-top: 10px; }
 body:has(dialog[open]) { overflow: hidden; }
