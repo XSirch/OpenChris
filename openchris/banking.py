@@ -17,7 +17,8 @@ from sqlalchemy import JSON, DateTime, String, func, select, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .db import Base, db_session
-from .finance import INVESTMENT_INCOME, Entry, Position, upsert_entry, upsert_position
+from .finance import ETF_CLASS, INVESTMENT_INCOME, Entry, Position, upsert_entry, upsert_position
+from .performance import InvestmentBalance, investment_observation
 
 bp = Blueprint("banking", __name__)
 BASE_URL = "https://api.pluggy.ai"
@@ -262,7 +263,7 @@ def _connection_institutions(connector_name, accounts, investments):
 
 def _position(raw, institution, updated_at):
     subtype = raw.get("subtype") or ""
-    classes = {"REAL_ESTATE_FUND": "Fundos imobiliários", "ETF": "ETFs", "STOCK": "Ações",
+    classes = {"REAL_ESTATE_FUND": "Fundos imobiliários", "ETF": ETF_CLASS, "ETF_FUND": ETF_CLASS, "STOCK": "Ações",
                "FIXED_INCOME": "Renda fixa", "MUTUAL_FUND": "Fundos", "TREASURY": "Renda fixa",
                "RETIREMENT": "Previdência"}
     name = raw.get("name") or raw.get("code") or "Título sem nome"
@@ -384,6 +385,10 @@ def sync_item(item_id):
                 entries.append(row)
     investment_rows = list(_records("/investments", {"itemId": item_id})) if reads_positions else []
     name, investment_institution = _connection_institutions(connector.get("name"), account_rows, investment_rows)
+    try:
+        observation = investment_observation(item_id, investment_rows, _records) if investment_rows else None
+    except (ValueError, TypeError, InvalidOperation):
+        observation = None  # An unusable observation must not interrupt regular import validation.
     with db_session() as db:
         _lock_import(db)
         conn = db.get(Connection, item_id)
@@ -428,6 +433,8 @@ def sync_item(item_id):
                          "entries": sorted(entry_ids if "TRANSACTIONS" in reported else old_entries)}
         conn.updated_at = datetime.now(timezone.utc)
         conn.status = "Atualizada"
+        if observation:
+            db.merge(InvestmentBalance(name=conn.name, **observation))
 
 
 def sync_due():

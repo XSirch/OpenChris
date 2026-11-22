@@ -1,5 +1,6 @@
-import { api, esc, has, isoToday, icon, action, link, money } from './ui.js';
+import { api, esc, has, isoToday, icon, action, link, money, date } from './ui.js';
 import { today, portfolio, mountPortfolio, spending, contributions } from './finance-views.js';
+import { mountPerformance } from './performance.js';
 import { calculators, calcResult, economy, more, researchers, agentSettings, effortChoice, assetSheet } from './tool-views.js';
 import {
   advanceForm,
@@ -120,7 +121,7 @@ async function render(change = false) {
   }
   const month = route === 'gastos' ? state.month : currentMonth();
   try {
-    let content;
+    let content, performance;
     if (route === 'calculadoras') content = calculators();
     else if (route === 'mais') content = more();
     else if (route === 'economia') {
@@ -131,12 +132,14 @@ async function render(change = false) {
       economic = data;
       content = economy(economic, state);
     } else {
-      const [f, e] = await Promise.all([
+      const [f, e, perf] = await Promise.all([
         api(financePath(month)),
         route === 'hoje' ? api('/api/economy').catch(() => null) : null,
+        route === 'carteira' ? api('/api/portfolio/performance').catch(() => null) : null,
       ]);
       if (seq !== loadId) return;
       finance = f;
+      performance = perf;
       content =
         route === 'hoje'
           ? today(f, e)
@@ -148,7 +151,10 @@ async function render(change = false) {
     }
     if (seq !== loadId) return;
     main.innerHTML = content;
-    if (route === 'carteira') mountPortfolio(main, finance, state.portfolio);
+    if (route === 'carteira') {
+      mountPortfolio(main, finance, state.portfolio);
+      mountPerformance(main, performance);
+    }
     main.setAttribute('aria-busy', 'false');
     if (change && route === 'mais' && url.searchParams.get('abrir') === 'conexoes') void openAction('banco');
     if (change && route === 'aportes' && url.searchParams.get('abrir') === 'simulacao') {
@@ -244,7 +250,7 @@ async function openAction(key, node) {
   const id = node?.dataset.id;
   if (key === 'finance-chat') {
     const chat = dialog('Chat financeiro', `
-      <p class="dialog-copy">Pergunte sobre seus gastos, receitas, carteira ou aportes. O Codex usa um resumo financeiro para responder. As conversas ficam no OpenChris.</p>
+      <p class="dialog-copy">Pergunte sobre seus gastos, carteira, aportes ou as pesquisas da aba Economia. As conversas ficam no OpenChris.</p>
       <div class="stack tight finance-chat" data-chat-log role="log" aria-label="Conversa financeira"></div>
       <form data-form="finance-chat">
         <label class="field">Sua pergunta <textarea name="question" rows="3" maxlength="1000" required></textarea></label>
@@ -392,6 +398,7 @@ async function openAction(key, node) {
     'edit-entry': () => entryForm(f.spending.entries.find((e) => String(e.id) === id)),
   };
   body.innerHTML = content[key]();
+  if (key === 'targets') updateTargetTotal(body.querySelector('[data-form="targets"]'));
 }
 function handleError(err) {
   if (dlg.open) dialogError(err.message);
@@ -438,6 +445,7 @@ document.addEventListener('change', (ev) => {
 document.addEventListener('input', (ev) => {
   const field = ev.target;
   const form = field.form;
+  if (form?.dataset.form === 'targets') updateTargetTotal(form);
   if (form?.dataset.form !== 'calc') return;
   if (field.name === 'rate' || ['principal', 'monthly', 'target'].includes(field.name)) {
     if (ev.inputType === 'insertText' && ev.data === '.' && !field.value.includes(',')) {
@@ -538,12 +546,17 @@ async function refreshFinanceChat(id) {
     const log = body.querySelector('[data-chat-log]');
     const pending = messages.some(m => ['pending', 'running', 'retry'].includes(m.state));
     const content = messages.map(m => {
+      const references = m.references?.length
+        ? `<p class="note">Pesquisas citadas</p><ul class="chat-references">${m.references.map(ref =>
+            `<li>${link('economia?evento=' + encodeURIComponent(ref.id), esc(ref.title) + ' · ' + date(ref.date))}</li>`
+          ).join('')}</ul>`
+        : '';
       const status = m.state === 'running' ? 'Preparando a resposta…'
         : m.state === 'failed' ? m.notice || 'Envie a pergunta novamente.'
           : waiting || m.notice || 'Pergunta na fila…';
       return `<div class="inset"><p><strong>Você · ${esc(m.month.split('-').reverse().join('/'))}</strong></p>
         <p class="chat-text">${esc(m.question)}</p>
-        ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>`
+        ${m.answer ? `<p><strong>OpenChris</strong></p><p class="chat-text">${esc(m.answer)}</p>${references}`
           : `<p class="note">${esc(status)}</p>`}</div>`;
     }).join('');
     if (log.innerHTML !== content) log.innerHTML = content;
@@ -551,6 +564,20 @@ async function refreshFinanceChat(id) {
     if (!pending) return;
     await new Promise(resolve => setTimeout(resolve, 4000));
   }
+}
+
+function targetTotal(form) {
+  return [...form.querySelectorAll('[data-class]')].reduce((sum, field) =>
+    sum + Math.round(Number(field.value || 0) * 100), 0);
+}
+
+function updateTargetTotal(form) {
+  const total = targetTotal(form);
+  const gap = 10000 - total;
+  const pretty = (value) => (value / 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '%';
+  form.querySelector('[data-target-total]').textContent = 'Total de ' + pretty(total)
+    + (gap ? ' · ' + (gap > 0 ? 'Falta ' : 'Excede em ') + pretty(Math.abs(gap)) : '');
+  form.querySelector('[type="submit"]').disabled = gap !== 0;
 }
 
 async function submit(form) {
@@ -638,7 +665,7 @@ async function submit(form) {
       const targets = Object.fromEntries(
         [...form.querySelectorAll('[data-class]')].map((el) => [el.dataset.class, el.value || '0']),
       );
-      if (Object.values(targets).reduce((sum, v) => sum + Math.round(Number(v) * 100), 0) !== 10000)
+      if (targetTotal(form) !== 10000)
         throw new Error('As metas devem somar 100%.');
       payload = { targets };
       message = 'Metas atualizadas.';

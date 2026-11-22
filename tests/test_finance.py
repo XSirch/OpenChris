@@ -116,6 +116,21 @@ class FinanceTest(unittest.TestCase):
         self.assertEqual(data["foreign_totals"], {"USD": "23.90"})
         self.assertEqual(len(data["positions"]), 2)
 
+    def test_etf_target_and_variable_income_per_currency(self):
+        for key, asset_class, value, currency in (
+            ("etf", "ETFs", "60", "BRL"), ("stock", "Ações", "20", "BRL"),
+            ("fixed", "Renda fixa", "420", "BRL"), ("etf-us", "ETFs", "10", "USD"),
+        ):
+            upsert_position(self.db, dict(external_id=key, name=key, asset_class=asset_class,
+                                          value=value, currency=currency))
+        update_profile(self.db, {"targets": {"ETFs": "20.25", "Renda fixa": "79.75"}})
+        result = self.summary(amount="100")
+        self.assertEqual(result["profile"]["targets"]["ETFs"], "20.25")
+        self.assertEqual(result["portfolio"]["total"], "500.00")
+        self.assertEqual(result["portfolio"]["variable_income"], {"BRL": "80.00", "USD": "10.00"})
+        etf = next(row for row in result["contribution"]["allocation"] if row["asset_class"] == "ETFs")
+        self.assertEqual(etf["target_percent"], "20.25")
+
     def test_merchant_rules_and_corrections_respect_bank_direction(self):
         fields = {"kind": "unknown", "category": ""}
         a = self.add_entry("debit", "2025-02-02", bank_direction="outflow", **fields)

@@ -26,6 +26,8 @@ INVESTMENT_INCOME = "Rendimentos de investimentos"
 INSTALLMENT_DISCOUNT = "Desconto de antecipação"
 KINDS = {"expense", "income", "transfer", "refund", "bill_payment", "unknown"}
 CLASSES = ("Renda fixa", "Ações", "Fundos imobiliários", "Exterior")
+ETF_CLASS = "ETFs"
+VARIABLE_INCOME_CLASSES = frozenset(("Ações", "Fundos imobiliários", ETF_CLASS, "Renda variável"))
 
 
 class Position(Base):
@@ -676,8 +678,10 @@ def dashboard(session, month=None, amount=None, *, today=None, bank=None):
     targets, reason = _targets(profile)
     positions = list(session.scalars(select(Position).where(Position.active.is_(True))
                                     .order_by(Position.value.desc(), Position.id)))
-    values, foreign = defaultdict(Decimal), defaultdict(Decimal)
+    values, foreign, variable = defaultdict(Decimal), defaultdict(Decimal), defaultdict(Decimal)
     for row in positions:
+        if row.asset_class in VARIABLE_INCOME_CLASSES:
+            variable[row.currency] += row.value
         if row.currency == "BRL":
             values[row.asset_class] += row.value
         else:
@@ -690,10 +694,12 @@ def dashboard(session, month=None, amount=None, *, today=None, bank=None):
                     "commitments": _cash(profile.commitments), "minimum": _cash(profile.minimum),
                     "next_income_date": profile.next_income_date.isoformat() if profile.next_income_date else None,
                     "targets": {k: _cash(v) for k, v in targets.items()}, "target_reason": reason,
-                    "targets_manual": profile.targets is not None, "target_classes": sorted(set(CLASSES) | set(values) | set(targets))}
+                    "targets_manual": profile.targets is not None,
+                    "target_classes": sorted(set(CLASSES) | {ETF_CLASS} | set(values) | set(targets))}
     return {"month": start.strftime("%Y-%m"), "as_of": today.isoformat(), "profile": profile_json,
             "portfolio": {"total": _cash(total), "classes": classes, "positions": [position_data(p) for p in positions],
                           "foreign_totals": {k: _cash(v) for k, v in foreign.items()},
+                          "variable_income": {k: _cash(v) for k, v in variable.items()},
                           "missing_connections": (bank or {}).get("missing_connections", 0)},
             "spending": _spending(session, start, today),
             "contribution": _budget(session, profile, bank or {}, today, amount, values, targets)}

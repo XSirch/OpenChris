@@ -15,6 +15,7 @@ import {
   empty,
   note,
 } from './ui.js';
+import { performancePanel } from './performance.js';
 
 export const kinds = {
   unknown: 'A classificar',
@@ -185,9 +186,10 @@ function distribution(positions, mode, targets) {
 
 function allocationBar(group, index, total, currency, target, selected) {
   const weight = share(group.value, total);
-  const diff = Math.round(((weight ?? 0) - (target ?? 0)) * 10) / 10;
-  const distance = diff
-    ? ` · ${Math.abs(diff).toLocaleString('pt-BR')} pp ${diff > 0 ? 'acima' : 'abaixo'}`
+  const diff = (weight ?? 0) - (target ?? 0);
+  const points = Math.abs(diff).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const distance = points !== '0'
+    ? ` · ${points} pp ${diff > 0 ? 'acima' : 'abaixo'}`
     : ' · Na meta';
   return /* HTML */ `
     <button type="button" class="portfolio-bar" data-group="${index}"
@@ -200,7 +202,7 @@ function allocationBar(group, index, total, currency, target, selected) {
         <span class="portfolio-fill" style="inline-size:${weight ?? 0}%"></span>
         ${has(target) ? `<span class="portfolio-marker" style="inset-inline-start:${target}%"></span>` : ''}
       </span>
-      ${has(target) ? `<small>Meta ${percent(target)}${weight === null ? '' : distance}</small>` : ''}
+      ${has(target) ? `<small>Meta ${target.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%${weight === null ? '' : distance}</small>` : ''}
     </button>`;
 }
 
@@ -223,9 +225,11 @@ export function portfolio(fin) {
         <div class="actions portfolio-actions">
           ${op('position', 'Cadastrar posição', p.positions.length ? 'text-btn' : 'primary')}
           ${op('import-positions', 'Importar extrato')}
+          ${op('targets', 'Editar metas')}
           ${missing ? '' : link('mais?abrir=conexoes', 'Ver conexões')}
         </div>
       </section>
+      ${performancePanel()}
       ${p.positions.length ? `
         <div class="portfolio-grid">
           <section class="portfolio-analysis" aria-labelledby="distribution-heading">
@@ -241,6 +245,7 @@ export function portfolio(fin) {
               ${Object.entries(groupLabels).map(([key, title]) =>
                 `<button type="button" data-portfolio-mode="${key}" aria-pressed="${key === 'class'}"${key === 'issuer' ? ' hidden' : ''}>${title}</button>`).join('')}
             </div>
+            <div id="portfolio-variable"></div>
             <div class="portfolio-chart" id="portfolio-chart"></div>
             <button id="portfolio-more" type="button" class="text-btn" aria-expanded="false" aria-controls="portfolio-chart" hidden>Ver todos os ativos</button>
             <div id="portfolio-context" class="portfolio-context"></div>
@@ -271,6 +276,7 @@ export function mountPortfolio(root, fin, view) {
   const clear = root.querySelector('#portfolio-clear');
   const more = root.querySelector('#portfolio-more');
   const context = root.querySelector('#portfolio-context');
+  const variable = root.querySelector('#portfolio-variable');
   const list = root.querySelector('#portfolio-results');
   const profile = fin.profile;
   let groups = [];
@@ -300,6 +306,13 @@ export function mountPortfolio(root, fin, view) {
 
   function renderChart() {
     const positions = fin.portfolio.positions.filter((p) => p.currency === view.currency);
+    const invested = positions.reduce((sum, position) => sum + cents(position.value), 0);
+    const variableValue = fin.portfolio.variable_income?.[view.currency];
+    const variableShare = share(cents(variableValue ?? 0), invested);
+    variable.innerHTML = view.mode === 'class' && invested > 0
+      ? `<p class="portfolio-subtotal"><span>Renda variável</span>
+          <strong class="numeric">${money(variableValue ?? 0, view.currency)} · ${percent(variableShare)}</strong></p>`
+      : '';
     const fixed = positions.filter(fixedIncome);
     modes.find((button) => button.dataset.portfolioMode === 'issuer').hidden = !fixed.length;
     if (!fixed.length && view.mode === 'issuer') {

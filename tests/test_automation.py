@@ -48,12 +48,40 @@ def test_finance_chat_uses_worker_and_financial_context(site, monkeypatch):
     def answer(kind, context, **kwargs):
         assert kind == "chat" and context["mes"] == month
         assert context["gastos"]["total"] == "92.31"
-        return {"answer": "O gasto foi de R$ 92,31."}
+        assert not context["pesquisas_economicas"]
+        return {"answer": "O gasto foi de R$ 92,31.", "event_ids": []}
 
     monkeypatch.setattr(jobs, "codex_result", answer)
     assert jobs.run_one()
     message = site.get("/api/finance-chat").json["messages"][0]
     assert (message["state"], message["answer"]) == ("done", "O gasto foi de R$ 92,31.")
+
+
+def test_chat_links_only_research_supplied_to_worker(site, monkeypatch):
+    from datetime import date
+
+    with db_session() as db:
+        worker = jobs.runtime(db, "worker")
+        worker.count, worker.checked_at = 1, jobs.now()
+        db.add(jobs.Event(key="copom:2024", provider="bcb", date=date(2024, 9, 18), title="Decisão do Copom",
+                          source_url="https://www.bcb.gov.br", fact="Decisão publicada",
+                          analysis={"conclusion": "Conclusão publicada", "phase": "published"},
+                          previous_analysis={"conclusion": "Cenário anterior", "phase": "scheduled"}))
+    assert site.post("/api/finance-chat", json={
+        "question": "O que o worker analisou sobre a Selic em 18/09/2024?", "month": "2024-09",
+    }).status_code == 202
+
+    def answer(kind, context, **kwargs):
+        report, = context["pesquisas_economicas"]
+        assert report["analise_anterior"]["fase"] == "scheduled"
+        assert report["analise"]["fase"] == "published"
+        return {"answer": "A conclusão mudou após a divulgação.", "event_ids": [report["id"], 999, report["id"]]}
+
+    monkeypatch.setattr(jobs, "codex_result", answer)
+    assert jobs.run_one()
+    message, = site.get("/api/finance-chat").json["messages"]
+    assert message["state"] == "done"
+    assert message["references"] == [{"id": 1, "title": "Decisão do Copom", "date": "2024-09-18"}]
 
 
 def test_chat_and_background_tasks_ignore_previous_daily_limit(site, monkeypatch):
@@ -77,7 +105,7 @@ def test_chat_and_background_tasks_ignore_previous_daily_limit(site, monkeypatch
     def answer(kind, context, **kwargs):
         calls.append(kind)
         if kind == "chat":
-            return {"answer": "Resposta de teste."}
+            return {"answer": "Resposta de teste.", "event_ids": []}
         return {"items": [dict(id=context[0]["id"], kind="expense", category="Mercado", confident=True)]}
 
     monkeypatch.setattr(jobs, "codex_result", answer)
@@ -107,7 +135,7 @@ def test_finance_chat_respects_and_recovers_from_codex_pause(site, monkeypatch):
     with db_session() as db:
         job = db.scalar(select(jobs.Job))
         job.ready_at = jobs.now() - timedelta(seconds=1)
-    monkeypatch.setattr(jobs, "codex_result", lambda *args, **kwargs: {"answer": "Resposta de teste."})
+    monkeypatch.setattr(jobs, "codex_result", lambda *args, **kwargs: {"answer": "Resposta de teste.", "event_ids": []})
     assert not jobs.run_one()
     with db_session() as db:
         db.get(jobs.Runtime, "codex").until = jobs.now() - timedelta(seconds=1)

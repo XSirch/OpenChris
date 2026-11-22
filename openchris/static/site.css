@@ -152,6 +152,31 @@ details > summary::-webkit-details-marker { display: none; }
 .portfolio-position summary .numeric { flex: 0 1 auto; min-width: 0; text-align: end; }
 .portfolio-position summary svg { flex: 0 0 auto; }
 .portfolio-position .meta > div { min-width: 0; }
+.portfolio-subtotal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 10px 8px; background: var(--input); }
+.performance { border-top: 1px solid var(--line); padding-top: 20px; min-width: 0; }
+.performance-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 18px; }
+.performance-head .portfolio-modes { margin: 0; }
+.performance-head button { min-height: 44px; }
+#performance-data > :not(:first-child) { margin-top: 8px; }
+.performance-total { margin-top: 12px; }
+.performance-total p, .performance-total small, .benchmark-row small { color: var(--muted); }
+.performance-total strong { display: block; font-size: 2rem; letter-spacing: -.025em; }
+.performance-chart { width: 100%; max-height: 190px; display: block; background: var(--input); border-radius: 7px; }
+.performance-values summary { display: inline-block; min-height: 42px; color: var(--accent); padding-block: 10px; text-decoration: underline; }
+.performance-values section { margin-bottom: 8px; }
+.performance-values dl > div, .performance-moves > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.performance-references { display: grid; gap: 3px; margin-top: 14px; }
+.performance-references h3 { color: var(--muted); margin-block: 4px; }
+.benchmark-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.benchmark-row > :last-child { text-align: end; }
+.benchmark-row small { display: block; }
+.benchmark-key { display: inline-block; width: 9px; height: 9px; margin-inline-end: 4px; border-radius: 50%; background: var(--series); }
+.target-total { margin-block: 12px; font-weight: 650; }
+.chat-references { margin: 5px 0 0; padding-inline-start: 18px; overflow-wrap: anywhere; }
+@media (min-width: 720px) {
+  .performance-references { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 24px; }
+  .performance-references h3 { grid-column: 1 / -1; }
+}
 @media (min-width: 850px) {
   .portfolio-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }

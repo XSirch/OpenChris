@@ -7,12 +7,13 @@ def worker():
     from .automation import refresh_models, tick
     from .banking import sync_due
     from .db import initialize
+    from .performance import refresh_benchmarks
 
     initialize()
     refresh_models(force=True)
     log = logging.getLogger("openchris.worker")
     while True:
-        for task in (sync_due, tick):
+        for task in (sync_due, refresh_benchmarks, tick):
             try:
                 task()
             except Exception as exc:

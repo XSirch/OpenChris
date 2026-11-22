@@ -37,7 +37,7 @@ def db_session():
 
 
 def initialize():
-    from . import automation, banking, finance  # register ORM tables for all three domains
+    from . import automation, banking, finance, performance  # register ORM tables
 
     with engine().begin() as conn:
         if conn.dialect.name == "postgresql":

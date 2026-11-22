@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 from datetime import date, datetime, timedelta, timezone
+from unicodedata import normalize
 from urllib.parse import urlsplit
 from uuid import uuid4
 from zoneinfo import ZoneInfo
@@ -303,6 +304,79 @@ def valid_event(db, payload):
     return event if event and signature(event) == payload["signature"] else None
 
 
+_CHAT_WORDS = re.compile(r"[a-z]{3,}|\d{4}|\d{1,2}/\d{1,2}")
+_CHAT_STOP = frozenset("qual quais sobre para como onde quando antes depois esse essa isso meu minha "
+                       "neste deste isso mudou pesquisa pesquisas worker relatorio relatorios analise analises "
+                       "recente recentes ultima ultimas ultimo ultimos impacto carteira banco hoje ano".split())
+_ECON_TOPICS = {"selic": "copom juros", "copom": "selic juros", "juros": "copom selic",
+                "inflacao": "ipca inpc", "ipca": "inflacao", "pib": "atividade crescimento",
+                "desemprego": "pnad emprego", "ibovespa": "bolsa bovespa"}
+_ECON_GENERAL = {"economia", "economico", "economicos", "macro", "macroeconomia", "mercado", "cenarios"}
+
+
+def _chat_words(text):
+    plain = normalize("NFD", text.casefold()).encode("ascii", "ignore").decode()
+    return set(_CHAT_WORDS.findall(plain)) - _CHAT_STOP
+
+
+def _chat_terms(text):
+    words = _chat_words(text)
+    return words | {alias for word in words for alias in _ECON_TOPICS.get(word, "").split()}
+
+
+def _report_excerpt(analysis):
+    if not isinstance(analysis, dict) or not analysis.get("conclusion"):
+        return None
+    return {
+        "fase": analysis.get("phase"),
+        "elaborada_em": analysis.get("created_at"),
+        "conclusao": str(analysis["conclusion"])[:1400],
+        "impacto": str(analysis.get("impact", ""))[:800],
+        "divergencia": str(analysis.get("divergence", ""))[:800],
+        "cenarios": [str(item)[:550] for item in (analysis.get("scenarios") or [])[:5]],
+        "argumentos": [{key: str(argument.get(key, ""))[:650] for key in
+                        ("specialist", "argument", "scenario", "source_url")}
+                       for argument in (analysis.get("arguments") or [])[:4] if isinstance(argument, dict)],
+    }
+
+
+def _chat_research(db, data):
+    question = _chat_words(data["question"])
+    terms = _chat_terms(data["question"])
+    previous = (data.get("previous") or [])[-1:]
+    follow_up = _chat_terms(previous[0]["question"]) if previous else set()
+    previous_refs = {ref.get("id") for row in previous for ref in row.get("references", [])}
+    broad = bool(question & _ECON_GENERAL) or bool(re.search(
+        r"pesquisas?|relat[óo]rios?|an[áa]lises?", data["question"], re.I,
+    ))
+    date_filter = {term for term in question if term.isdecimal()}
+    date_filter |= {"/".join(str(int(part)) for part in term.split("/")) for term in question if "/" in term}
+    # An explicit date narrows broad queries as well as indicator searches.
+    relevant = []
+    for event in db.scalars(select(Event).order_by(Event.date.desc(), Event.id.desc())):
+        main = _report_excerpt(event.analysis)
+        earlier = _report_excerpt(event.previous_analysis)
+        if not main and not earlier:
+            continue
+        dates = {str(event.date.year), f"{event.date.day}/{event.date.month}"}
+        if date_filter and not date_filter <= dates:
+            continue
+        title = _chat_words(event.title) - _ECON_GENERAL
+        evidence = _chat_words(" ".join((event.fact or "", *(excerpt["conclusao"]
+                                                        for excerpt in (main, earlier) if excerpt)))) - _ECON_GENERAL
+        score = 5 * len(terms & title) + len(terms & evidence)
+        has_topic = bool(question & _ECON_TOPICS.keys())
+        continuation = not has_topic and not date_filter
+        if continuation:
+            score += 2 * len(follow_up & title) + 3 * (event.id in previous_refs)
+        if score or (not has_topic and (broad or date_filter)):
+            relevant.append((score, event, main, earlier))
+    relevant.sort(key=lambda result: result[0], reverse=True)
+    return [{"id": event.id, "titulo": event.title, "data": event.date.isoformat(), "fase": phase(event),
+             "fato": (event.fact or "")[:850], "fonte": event.source_url, "analise": main, "analise_anterior": earlier}
+            for _, event, main, earlier in relevant[:6]]
+
+
 def prepare(db, jobs):
     job, data = jobs[0], jobs[0].payload
     if job.kind == "chat":
@@ -312,6 +386,7 @@ def prepare(db, jobs):
         view = finance.dashboard(db, month=data["month"], today=day(), bank=bank)
         spending = view["spending"]
         return {"pergunta": data["question"], "conversa_anterior": data["previous"],
+                "pesquisas_economicas": _chat_research(db, data),
                 "mes": view["month"], "dados_ate": spending["cutoff"],
                 "receitas_classificadas": str(sum(finance.money(e["amount"]) for e in spending["entries"]
                                                   if e["kind"] == "income")),
@@ -382,7 +457,11 @@ def save_result(db, jobs, context, out, verified):
     if job.kind == "chat":
         if not out["answer"].strip():
             raise ValueError("Resposta vazia.")
-        job.payload = {"question": data["question"], "month": data["month"], "answer": out["answer"]}
+        evidence = {event["id"]: event for event in context["pesquisas_economicas"]}
+        references = [{"id": key, "title": evidence[key]["titulo"], "date": evidence[key]["data"]}
+                      for key in dict.fromkeys(out["event_ids"]) if key in evidence]
+        job.payload = {"question": data["question"], "month": data["month"], "answer": out["answer"],
+                       "references": references}
     elif job.kind == "expense":
         answers = {item["id"]: item for item in out["items"]}
         if len(answers) != len(out["items"]) or set(answers) != {r.payload["id"] for r in jobs}:
@@ -601,7 +680,8 @@ def finance_chat():
         control = db.get(Runtime, "codex")
         jobs = list(db.scalars(select(Job).where(Job.kind == "chat").order_by(Job.id.desc()).limit(8)))
         return jsonify(messages=[{"question": job.payload["question"], "month": job.payload["month"],
-                                  "answer": job.payload.get("answer"), "state": job.state, "notice": job.notice}
+                                  "answer": job.payload.get("answer"), "references": job.payload.get("references", []),
+                                  "state": job.state, "notice": job.notice}
                                  for job in reversed(jobs)],
                        waiting=active_codex_notice(control))
 

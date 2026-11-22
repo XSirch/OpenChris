@@ -15,7 +15,7 @@ import {
 } from './ui.js';
 import { kinds, matchingCharges } from './finance-views.js';
 
-const baseClasses = ['Renda fixa', 'Ações', 'Fundos imobiliários', 'Exterior'];
+const baseClasses = ['Renda fixa', 'Ações', 'Fundos imobiliários', 'ETFs', 'Exterior'];
 const options = (labels) => Object.fromEntries(labels.map((x) => [x, x]));
 const dt = (name, label, value, required = true) => field(name, label, { type: 'date', value, required });
 const integer = (name, label, value) =>
@@ -142,14 +142,14 @@ export function targetsForm(p) {
       field('target_' + i, c, {
         type: 'number',
         unit: '%',
-        value: p.targets?.[c] ?? '',
+        value: p.targets?.[c] ?? '0',
         attr: `data-class="${esc(c)}" min="0" max="100" step="0.01"`,
       }),
     )
     .join('');
   return (
     note('Distribua 100% entre as classes que deseja manter na carteira.') +
-    form('targets', inputs, 'Salvar metas') +
+    form('targets', inputs + '<p class="target-total" data-target-total role="status"></p>', 'Salvar metas') +
     (p.targets_manual ? form('reset-targets', note('Você também pode voltar à distribuição calculada para seu perfil.'), 'Usar metas do perfil') : '')
   );
 }

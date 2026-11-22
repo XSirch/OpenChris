@@ -5,6 +5,7 @@ from .banking import bank_snapshot
 from .db import db_session
 from .finance import (advance_installments, calculate, correct_entry, dashboard, entry_data,
                       position_data, update_profile, upsert_entry, upsert_position)
+from .performance import portfolio_performance
 
 bp = Blueprint("finance", __name__)
 
@@ -30,6 +31,12 @@ def _payload():
 def summary():
     with db_session() as db:
         return jsonify(dashboard(db, request.args.get("month"), request.args.get("amount"), bank=bank_snapshot(db)))
+
+
+@bp.get("/api/portfolio/performance")
+def performance():
+    with db_session() as db:
+        return jsonify(portfolio_performance(db))
 
 
 @bp.post("/api/positions")
